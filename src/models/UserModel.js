@@ -12,7 +12,7 @@ const UserSchema = new Schema({
     loginCount: { type: Number, required: true, default: 0 },
     refreshToken: { type: String },
     verification: { type: Boolean, required: true, default: false },
-    device: { type: String, required: true },
+    isMobile: { type: Boolean, required: true },
     browser: { type: String, required: true },
     userIp: { type: String, required: true },
     allowed_paths:{type:[String]}

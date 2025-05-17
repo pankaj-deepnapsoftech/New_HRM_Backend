@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import moment from "moment";
+import bcrypt from "bcrypt";
 
 // local imports
 import { UserModel } from "../models/UserModel.js";
@@ -26,8 +27,7 @@ const CookiesOptions = (time) => {
 
 export const CreateUser = AsyncHandler(async (req, res) => {
     const data = req.body;
-    const userIp =
-        req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
+    const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
 
     const exist = await UserModel.findOne({ $or: [{ email: data.email }, { username: data.username }] });
     if (exist) {
@@ -36,21 +36,48 @@ export const CreateUser = AsyncHandler(async (req, res) => {
 
     const refresh_token = SignToken({ email: data.email, username: data.username }, "1day");
     const access_token = SignToken({ email: data.email, username: data.username }, "1day");
-    const result = await UserModel.create({ ...data, refreshToken: refresh_token,userIp });
+    const result = await UserModel.create({ ...data, refreshToken: refresh_token, userIp });
+    result.password = null;
 
-    res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)))
+    res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
 
-    return res.status(StatusCodes.ACCEPTED).json({
+    return res.status(StatusCodes.CREATED).json({
         message: "User Register Successful",
-        data: result
-    })
+        data: result,
+        refresh_token,
+        access_token
+    });
 });
 
-
 export const LoginUser = AsyncHandler(async (req, res) => {
-    const { username, email } = req.body;
+    const { username, password, browser, device } = req.body;
+    const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
 
+    const exist = await UserModel.findOne({ $or: [{ email: username }, { username }] });
+    if (!exist) {
+        throw new BadRequestError("Bad Credintial", "LoginUser method");
+    };
+
+    const isCurrect = bcrypt.compareSync(password, exist.password);
+    if (!isCurrect) {
+        throw new BadRequestError("Bad Credintial", "LoginUser method");
+    };
+
+    const refresh_token = SignToken({ email: exist.email, username: exist.username }, "1day");
+    const access_token = SignToken({ email: exist.email, username: exist.username }, "1day");
+    const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token, userIp, browser, device }).select("fullName email phone username ");
+    res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
+    return res.status(StatusCodes.CREATED).json({
+        message: "User Register Successful",
+        data: result,
+        refresh_token,
+        access_token
+    })
 })
+
+export const LogedInUser = AsyncHandler(async (req,res) => {
+    
+});
 
 
 
