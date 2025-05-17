@@ -76,7 +76,10 @@ export const LoginUser = AsyncHandler(async (req, res) => {
 })
 
 export const LogedInUser = AsyncHandler(async (req,res) => {
-    
+    return res.status(StatusCodes.OK).json({
+        message:"User",
+        data:req?.CurrentUser
+    })
 });
 
 

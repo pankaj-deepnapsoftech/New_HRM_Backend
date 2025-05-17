@@ -3,7 +3,10 @@ import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    files: ["**/*.{js,mjs,cjs}"],  // This will include all JS files even if ignored by `.eslintignore`
+    files: ["**/*.{js,mjs,cjs}"], 
+     languageOptions: {
+      ecmaVersion: 2022,
+     },
     plugins: { js },
     extends: ["js/recommended"],
     rules: {
