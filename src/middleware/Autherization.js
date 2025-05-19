@@ -3,9 +3,10 @@ import { logger } from "../utils/Logger.js"
 import { VerifyToken } from "../utils/TokenGenerator.js";
 import { UserModel } from "../models/UserModel.js";
 import { UnauthorizedError } from "../utils/CustomError.js";
+import { StatusCodes } from "http-status-codes";
 
 
-export const Autherization = async(req,_res,next) => {
+export const Autherization = async(req,res,next) => {
     try {
         const {ajt} = req.cookies || req.headers?.authorization?.split(' ')[1];
         const {email} = VerifyToken(ajt);
@@ -17,6 +18,9 @@ export const Autherization = async(req,_res,next) => {
         next();
     } catch (error) {
       logger.error(error)
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        message:"user not verify"
+      })
     }
 }
 
