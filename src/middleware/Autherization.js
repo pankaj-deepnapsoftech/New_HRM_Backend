@@ -1,3 +1,4 @@
+/* eslint-disable no-unsafe-optional-chaining */
 import { logger } from "../utils/Logger.js"
 import { VerifyToken } from "../utils/TokenGenerator.js";
 import { UserModel } from "../models/UserModel.js";
