@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 // local imports
 import { UserModel } from "../models/UserModel.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
-import { BadRequestError } from "../utils/CustomError.js";
+import { BadRequestError, NotFoundError } from "../utils/CustomError.js";
 import { SignToken } from "../utils/TokenGenerator.js";
 import { config } from "../config/env.config.js";
 
@@ -20,7 +20,7 @@ const CookiesOptions = (time) => {
         httpOnly: true,
         secure: config.NODE_ENV !== "development",
         maxAge: time,
-        sameSite: 'none',
+        sameSite: config.NODE_ENV !== "development" ?  'none' : "Lax",
     }
 }
 
@@ -68,7 +68,7 @@ export const LoginUser = AsyncHandler(async (req, res) => {
     const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token, userIp, browser, device }).select("fullName email phone username ");
     res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
     return res.status(StatusCodes.CREATED).json({
-        message: "User Register Successful",
+        message: "Login Successful",
         data: result,
         refresh_token,
         access_token
@@ -81,6 +81,27 @@ export const LogedInUser = AsyncHandler(async (req,res) => {
         data:req?.CurrentUser
     })
 });
+
+export const LogoutUser = AsyncHandler(async (req,res) => {
+    const user = await UserModel.findById(req?.CurrentUser._id);
+    if(!user){
+        throw new NotFoundError("something Went wrong","LogoutUser method");
+    };
+    res.clearCookie('rjt').clearCookie("ajt").status(StatusCodes.ACCEPTED).json({
+        message:"User loged out Successful"
+    });
+});
+
+export const ForgetPassword = AsyncHandler(async (req,res)  => {
+    const {email} = req.body;
+    const data = await UserModel.findOne({email});
+    if(!data){
+        throw new NotFoundError("Email Not Register","Forget Password Method");
+    };
+
+});
+
+
 
 
 

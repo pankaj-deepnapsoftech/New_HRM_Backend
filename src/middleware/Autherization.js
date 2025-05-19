@@ -1,3 +1,4 @@
+/* eslint-disable no-unsafe-optional-chaining */
 import { logger } from "../utils/Logger.js"
 import { VerifyToken } from "../utils/TokenGenerator.js";
 import { UserModel } from "../models/UserModel.js";
@@ -13,7 +14,7 @@ export const Autherization = async(req,_res,next) => {
             next(new UnauthorizedError("User Not Autherized","Autherization methord"))
         }
         req.CurrentUser = user;
-        next()
+        next();
     } catch (error) {
       logger.error(error)
     }
