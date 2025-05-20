@@ -6,7 +6,7 @@ import { StatusCodes } from "http-status-codes";
 // local imports
 import { config } from "./config/env.config.js";
 import RootRouter from "./routes/Routes.js";
-import { CustomError } from "./utils/CustomError.js";
+import {  CustomError } from "./utils/CustomError.js";
 
 export const StartServer = (app) => {
     app.set('trust proxy', 1);
@@ -21,7 +21,7 @@ export const StartServer = (app) => {
 
     app.get("/health", (_req, res) => { res.send("Server is running and healthy") });
 
-    app.use("/api/v1", RootRouter)
+    app.use("/api/v1", RootRouter);
 
     app.use((error, _req, res, next) => {
         if (error instanceof CustomError) {
