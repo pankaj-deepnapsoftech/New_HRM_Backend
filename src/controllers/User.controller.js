@@ -1,6 +1,8 @@
 import { StatusCodes } from "http-status-codes";
 import moment from "moment";
 import bcrypt from "bcrypt";
+import {fileURLToPath} from "url";
+import path from "path";
 
 // local imports
 import { UserModel } from "../models/UserModel.js";
@@ -14,6 +16,8 @@ import { SendMail } from "../utils/SendMail.js";
 const now = moment();
 const midnight = moment().endOf('day');
 const timeUntilMidnight = midnight.diff(now);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const BackendUrl = config.NODE_ENV !== "development" ? config.BACKEND_URL : config.LOCAL_BACKEND_URL
 
@@ -123,9 +127,25 @@ export const ForgetPassword = AsyncHandler(async (req, res) => {
         throw new NotFoundError("Email Not Register", "Forget Password Method");
     };
 
+    const token = SignToken({email},"10min")
+
+    SendMail("forgetPassword.ejs",{userName:data.username,resetLink:`${BackendUrl}/user/verify-link?token=${token}`},{subject:"Forget Password Link",email})
+    return res.status(StatusCodes.OK).json({
+        message:"reset password link Send in your Email"
+    })
+
 });
 
-// export const 
+export const VerifyLink = AsyncHandler(async (req,res) => {
+    const {token} = req.query;
+    const {email} = VerifyToken(token);
+    const user = await UserModel.findOne({email});
+    if(!user){
+      throw new BadRequestError("User Not Found","VerifyLink Method");
+    }
+    const filepath = path.join(__dirname,"../../forgetPassword.html");
+    res.sendFile(filepath)
+});
 
 
 
