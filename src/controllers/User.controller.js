@@ -8,6 +8,7 @@ import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { BadRequestError, NotFoundError } from "../utils/CustomError.js";
 import { SignToken } from "../utils/TokenGenerator.js";
 import { config } from "../config/env.config.js";
+import { SendMail } from "../utils/SendMail.js";
 
 
 const now = moment();
@@ -41,6 +42,8 @@ export const CreateUser = AsyncHandler(async (req, res) => {
 
     res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
 
+    SendMail("email=verification.ejs",{userName:result.username,verificationLink:"http://localhost:5000/api/v1/health"},{subject:"Verify Your Email",email:result.email})
+    
     return res.status(StatusCodes.CREATED).json({
         message: "User Register Successful",
         data: result,

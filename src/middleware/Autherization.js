@@ -1,5 +1,4 @@
 /* eslint-disable no-unsafe-optional-chaining */
-import { logger } from "../utils/Logger.js"
 import { VerifyToken } from "../utils/TokenGenerator.js";
 import { UserModel } from "../models/UserModel.js";
 import { UnauthorizedError } from "../utils/CustomError.js";
@@ -17,7 +16,6 @@ export const Autherization = async(req,res,next) => {
         req.CurrentUser = user;
         next();
     } catch (error) {
-      logger.error(error)
       return res.status(StatusCodes.UNAUTHORIZED).json({
         message:"user not verify"
       })
