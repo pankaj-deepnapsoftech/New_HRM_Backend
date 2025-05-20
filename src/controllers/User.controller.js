@@ -66,6 +66,13 @@ export const LoginUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError("Bad Credintial", "LoginUser method");
     };
 
+    if(!exist.verification){
+        SendMail("email-verification.ejs",{userName:result.username,verificationLink:"http://localhost:5000/api/v1/health"},{subject:"Verify Your Email",email:result.email});
+        return res.status(StatusCodes.FORBIDDEN).json({
+            message:"Email send in your Register mail please verify"
+        })
+    }
+
     const refresh_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const access_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token, userIp, browser, device }).select("fullName email phone username ");
