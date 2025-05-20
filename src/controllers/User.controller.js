@@ -147,6 +147,25 @@ export const VerifyLink = AsyncHandler(async (req,res) => {
     res.sendFile(filepath)
 });
 
+export const ResetPassword = AsyncHandler(async (req,res) => {
+    const token = req.query;
+    const {password} = req.body;
+
+    const {email} = VerifyToken(token);
+    const user = await UserModel.findOne({email});
+
+    if(!user){
+        throw new NotFoundError("User not found","ResetPassword method");
+    };
+
+    await UserModel.findByIdAndUpdate(user._id,{password});
+
+    return res.status(StatusCodes.OK).json({
+        message:"password updated Successful",
+        redirectUrl:config.NODE_ENV !== "development" ? config.CLIENT_URL : config.LOCAL_CLIENT_URL
+    })
+});
+
 
 
 

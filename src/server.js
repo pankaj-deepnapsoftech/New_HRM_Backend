@@ -2,11 +2,20 @@ import { json, urlencoded } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { StatusCodes } from "http-status-codes";
+import path from "path" ;
+import {fileURLToPath} from "url";
 
 // local imports
 import { config } from "./config/env.config.js";
 import RootRouter from "./routes/Routes.js";
 import {  CustomError } from "./utils/CustomError.js";
+
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
 
 export const StartServer = (app) => {
     app.set('trust proxy', 1);
@@ -26,7 +35,10 @@ export const StartServer = (app) => {
     app.use((error, _req, res, next) => {
         if (error instanceof CustomError) {
             return res.status(error.statusCode).json(error.serializeErrors());
-        } else {
+        } else if(error.message === "jwt expired") {
+            const filepath = path.join(__dirname,"../notfound.html");
+            res.sendFile(filepath)
+        }else {
             res.status(StatusCodes.BAD_REQUEST).json({
                 message: error.message || 'somthing went Wrong',
                 status: 'error',
