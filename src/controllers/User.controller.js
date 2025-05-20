@@ -43,7 +43,7 @@ export const CreateUser = AsyncHandler(async (req, res) => {
 
     res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
 
-    SendMail("email-verification.ejs", { userName: result.username, verificationLink: "http://localhost:5000/api/v1/health" }, { subject: "Verify Your Email", email: result.email })
+    SendMail("email-verification.ejs", { userName: result.username, verificationLink: `${BackendUrl}/user/verify-email?token=${access_token}` }, { subject: "Verify Your Email", email: result.email });
 
     return res.status(StatusCodes.CREATED).json({
         message: "User Register Successful",
@@ -73,7 +73,7 @@ export const LoginUser = AsyncHandler(async (req, res) => {
     const access_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token, userIp, browser, device }).select("fullName email phone username ");
     if (!exist.verification) {
-        SendMail("email-verification.ejs", { userName: result.username, verificationLink: "http://localhost:5000/api/v1/health" }, { subject: "Verify Your Email", email: result.email });
+       SendMail("email-verification.ejs", { userName: result.username, verificationLink: `${BackendUrl}/user/verify-email?token=${access_token}` }, { subject: "Verify Your Email", email: result.email })
         return res.status(StatusCodes.FORBIDDEN).json({
             message: "Email send in your Register mail please verify"
         })
