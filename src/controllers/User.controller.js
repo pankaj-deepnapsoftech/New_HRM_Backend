@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 import { UserModel } from "../models/UserModel.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { BadRequestError, NotFoundError } from "../utils/CustomError.js";
-import { SignToken } from "../utils/TokenGenerator.js";
+import { SignToken, VerifyToken } from "../utils/TokenGenerator.js";
 import { config } from "../config/env.config.js";
 import { SendMail } from "../utils/SendMail.js";
 
@@ -15,16 +15,17 @@ const now = moment();
 const midnight = moment().endOf('day');
 const timeUntilMidnight = midnight.diff(now);
 
+const BackendUrl = config.NODE_ENV !== "development" ? config.BACKEND_URL : config.LOCAL_BACKEND_URL
+
 
 const CookiesOptions = (time) => {
     return {
         httpOnly: true,
         secure: config.NODE_ENV !== "development",
         maxAge: time,
-        sameSite: config.NODE_ENV !== "development" ?  'none' : "Lax",
+        sameSite: config.NODE_ENV !== "development" ? 'none' : "Lax",
     }
 }
-
 
 export const CreateUser = AsyncHandler(async (req, res) => {
     const data = req.body;
@@ -42,8 +43,8 @@ export const CreateUser = AsyncHandler(async (req, res) => {
 
     res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
 
-    SendMail("email-verification.ejs",{userName:result.username,verificationLink:"http://localhost:5000/api/v1/health"},{subject:"Verify Your Email",email:result.email})
-    
+    SendMail("email-verification.ejs", { userName: result.username, verificationLink: "http://localhost:5000/api/v1/health" }, { subject: "Verify Your Email", email: result.email })
+
     return res.status(StatusCodes.CREATED).json({
         message: "User Register Successful",
         data: result,
@@ -66,16 +67,17 @@ export const LoginUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError("Bad Credintial", "LoginUser method");
     };
 
-    if(!exist.verification){
-        SendMail("email-verification.ejs",{userName:result.username,verificationLink:"http://localhost:5000/api/v1/health"},{subject:"Verify Your Email",email:result.email});
-        return res.status(StatusCodes.FORBIDDEN).json({
-            message:"Email send in your Register mail please verify"
-        })
-    }
+
 
     const refresh_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const access_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token, userIp, browser, device }).select("fullName email phone username ");
+    if (!exist.verification) {
+        SendMail("email-verification.ejs", { userName: result.username, verificationLink: "http://localhost:5000/api/v1/health" }, { subject: "Verify Your Email", email: result.email });
+        return res.status(StatusCodes.FORBIDDEN).json({
+            message: "Email send in your Register mail please verify"
+        })
+    }
     res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
     return res.status(StatusCodes.CREATED).json({
         message: "Login Successful",
@@ -85,31 +87,45 @@ export const LoginUser = AsyncHandler(async (req, res) => {
     })
 })
 
-export const LogedInUser = AsyncHandler(async (req,res) => {
+export const LogedInUser = AsyncHandler(async (req, res) => {
     return res.status(StatusCodes.OK).json({
-        message:"User",
-        data:req?.CurrentUser
+        message: "User",
+        data: req?.CurrentUser
     })
 });
 
-export const LogoutUser = AsyncHandler(async (req,res) => {
+export const LogoutUser = AsyncHandler(async (req, res) => {
     const user = await UserModel.findById(req?.CurrentUser._id);
-    if(!user){
-        throw new NotFoundError("something Went wrong","LogoutUser method");
+    if (!user) {
+        throw new NotFoundError("something Went wrong", "LogoutUser method");
     };
     res.clearCookie('rjt').clearCookie("ajt").status(StatusCodes.ACCEPTED).json({
-        message:"User loged out Successful"
+        message: "User loged out Successful"
     });
 });
 
-export const ForgetPassword = AsyncHandler(async (req,res)  => {
-    const {email} = req.body;
-    const data = await UserModel.findOne({email});
-    if(!data){
-        throw new NotFoundError("Email Not Register","Forget Password Method");
+export const VerifyEmail = AsyncHandler(async (req, res) => {
+    const { token } = req.query;
+    const { email } = VerifyToken(token);
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+        throw new BadRequestError("Invalid User", "VerifyEmail method")
+    }
+
+    await UserModel.findByIdAndUpdate(user._id, { verification: true });
+    res.redirect(config.NODE_ENV !== "development" ? config.CLIENT_URL : config.LOCAL_CLIENT_URL)
+});
+
+export const ForgetPassword = AsyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const data = await UserModel.findOne({ email });
+    if (!data) {
+        throw new NotFoundError("Email Not Register", "Forget Password Method");
     };
 
 });
+
+// export const 
 
 
 
