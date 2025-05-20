@@ -6,7 +6,7 @@ const UserSchema = new Schema({
     fullName: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
-    username: { type: String, required: true, trim: true },
+    username: { type: String, required: true, trim: true,lowercase:true },
     password: { type: String, required: true },
     employeeId: { type: String },
     loginCount: { type: Number, required: true, default: 0 },
@@ -15,7 +15,8 @@ const UserSchema = new Schema({
     isMobile: { type: Boolean, required: true },
     browser: { type: String, required: true },
     userIp: { type: String, required: true },
-    allowed_paths:{type:[String]}
+    allowed_paths:{type:[String]},
+    role:{type:String,required:true}
 });
 
 UserSchema.pre('save', async function (next) {

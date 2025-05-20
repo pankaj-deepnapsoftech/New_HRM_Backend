@@ -8,7 +8,8 @@ export const AuthValidation = object({
     username: string().min(2).required("username is required field"),
     password: string().min(6).max(16).required("Password is required field"),
     isMobile: string().required("isMobile is required field"),
-    browser: string().required("browser is required field"),
+    browser: string().required("Browser is required field"),
+    role: string().required("Role is required field"),
 });
 
 
