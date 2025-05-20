@@ -7,7 +7,7 @@ import path from "path";
 // local imports
 import { UserModel } from "../models/UserModel.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
-import { BadRequestError, NotFoundError } from "../utils/CustomError.js";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../utils/CustomError.js";
 import { SignToken, VerifyToken } from "../utils/TokenGenerator.js";
 import { config } from "../config/env.config.js";
 import { SendMail } from "../utils/SendMail.js";
@@ -164,6 +164,28 @@ export const ResetPassword = AsyncHandler(async (req,res) => {
         message:"password updated Successful",
         redirectUrl:config.NODE_ENV !== "development" ? config.CLIENT_URL : config.LOCAL_CLIENT_URL
     })
+});
+
+export const ChangePassword = AsyncHandler(async (req,res) => {
+    const {oldPassword,newPassword} = req.body;
+    
+    const user = await UserModel.findById(req?.CurrentUser?._id);
+
+    if(!user){
+        throw new NotFoundError("User Not Found","ChangePassword method");
+    };
+
+   const isCurrect = bcrypt.compareSync(oldPassword,user.password);
+   
+   if(!isCurrect){
+    throw new UnauthorizedError("Old Password is not match","ChangePassword method")
+   }
+   await UserModel.findByIdAndUpdate(user._id,{password:newPassword});
+
+   return res.status(StatusCodes.OK).json({
+    message:"Password Change Successful"
+   })
+
 });
 
 
