@@ -13,15 +13,15 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
         throw new NotFoundError("Aadhaar Card image not found", "CreateEmployeeDetail method");
     }
 
-    if (!files.photo) {
+    if (!files?.photo) {
         throw new NotFoundError("Photo not found", "CreateEmployeeDetail method");
     }
 
-    if (!files.pancard) {
+    if (!files?.pancard) {
         throw new NotFoundError("Pancard Proof not found", "CreateEmployeeDetail method");
     }
 
-    if (!files.Bank_Proof) {
+    if (!files?.Bank_Proof) {
         throw new NotFoundError("Bank Proof not found", "CreateEmployeeDetail method");
     }
 
@@ -29,13 +29,15 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
     const photo = `${FileUrl}/${files.photo[0].filename}`;
     const pancard = `${FileUrl}/${files.pancard[0].filename}`;
     const Bank_Proof = `${FileUrl}/${files.Bank_Proof[0].filename}`;
+    const Voter_Id = files?.Voter_Id &&  `${FileUrl}/${files.Voter_Id[0].filename}`;
+    const Driving_Licance = files?.Driving_Licance && `${FileUrl}/${files.Driving_Licance[0].filename}`;
 
-    const result = await EmployeeModel.create({ ...body, aadhaar, photo, pancard,Bank_Proof });
+    const result = await EmployeeModel.create({ ...body, aadhaar, photo, pancard,Bank_Proof,Voter_Id,Driving_Licance,Emp_id:req?.CurrentUser?._id });
 
     return res.status(StatusCodes.CREATED).json({
         message: "Employee data Uploaded",
         data: result
-    })
+    });
 
 });
 
