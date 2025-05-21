@@ -11,6 +11,7 @@ import { BadRequestError, NotFoundError, UnauthorizedError } from "../utils/Cust
 import { SignToken, VerifyToken } from "../utils/TokenGenerator.js";
 import { config } from "../config/env.config.js";
 import { SendMail } from "../utils/SendMail.js";
+import { BackendUrl } from "../constant.js";
 
 
 const now = moment();
@@ -19,7 +20,6 @@ const timeUntilMidnight = midnight.diff(now);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BackendUrl = config.NODE_ENV !== "development" ? config.BACKEND_URL : config.LOCAL_BACKEND_URL
 
 
 const CookiesOptions = (time) => {

@@ -1,4 +1,4 @@
-import { json, urlencoded } from "express";
+import express ,{ json, urlencoded } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { StatusCodes } from "http-status-codes";
@@ -31,6 +31,7 @@ export const StartServer = (app) => {
     app.get("/health", (_req, res) => { res.send("Server is running and healthy") });
 
     app.use("/api/v1", RootRouter);
+    app.use('/file', express.static(path.join(__dirname, '../', 'public/temp')));
 
     app.use((error, _req, res, next) => {
         if (error instanceof CustomError) {
