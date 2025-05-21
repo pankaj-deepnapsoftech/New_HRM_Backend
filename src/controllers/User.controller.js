@@ -148,7 +148,7 @@ export const VerifyLink = AsyncHandler(async (req,res) => {
 });
 
 export const ResetPassword = AsyncHandler(async (req,res) => {
-    const token = req.query;
+    const {token} = req.query;
     const {password} = req.body;
 
     const {email} = VerifyToken(token);

@@ -14,8 +14,8 @@ router.route("/logout").get(Autherization,LogoutUser);
 router.route("/verify-email").get(VerifyEmail);
 router.route("/forget-password").post(ForgetPassword);
 router.route("/verify-link").get(VerifyLink);
-router.route("/reset-password").get(ResetPassword);
-router.route("/change-password").put(ChangePassword)
+router.route("/reset-password").put(ResetPassword);
+router.route("/change-password").put(Autherization,ChangePassword)
 
 
 export default router;
