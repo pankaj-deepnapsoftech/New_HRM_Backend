@@ -42,4 +42,102 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
 });
 
 
+export const UpdateEmployeeDetail = AsyncHandler(async (req, res) => {
+    const { body, files } = req;
+    const employeeId = req.params.id;
+
+    const existingEmployee = await EmployeeModel.findById(employeeId);
+    if (!existingEmployee) {
+        throw new NotFoundError("Employee not found", "UpdateEmployeeDetail method");
+    }
+
+    // Prepare updated fields
+    const updates = { ...body };
+
+    if (files?.aadhaar) {
+        updates.aadhaar = `${FileUrl}/${files.aadhaar[0].filename}`;
+    }
+
+    if (files?.photo) {
+        updates.photo = `${FileUrl}/${files.photo[0].filename}`;
+    }
+
+    if (files?.pancard) {
+        updates.pancard = `${FileUrl}/${files.pancard[0].filename}`;
+    }
+
+    if (files?.Bank_Proof) {
+        updates.Bank_Proof = `${FileUrl}/${files.Bank_Proof[0].filename}`;
+    }
+
+    if (files?.Voter_Id) {
+        updates.Voter_Id = `${FileUrl}/${files.Voter_Id[0].filename}`;
+    }
+
+    if (files?.Driving_Licance) {
+        updates.Driving_Licance = `${FileUrl}/${files.Driving_Licance[0].filename}`;
+    }
+
+    // Update the employee data
+    const updatedEmployee = await EmployeeModel.findByIdAndUpdate(
+        employeeId,
+        updates,
+        { new: true } // return the updated document
+    );
+
+    return res.status(StatusCodes.OK).json({
+        message: "Employee data updated successfully",
+        data: updatedEmployee
+    });
+});
+
+export const DeleteEmployeeDetail = AsyncHandler(async (req, res) => {
+    const employeeId = req.params.id;
+
+    const deletedEmployee = await EmployeeModel.findByIdAndDelete(employeeId);
+
+    if (!deletedEmployee) {
+        throw new NotFoundError("Employee not found", "DeleteEmployeeDetail method");
+    }
+
+    return res.status(StatusCodes.OK).json({
+        message: "Employee deleted successfully",
+        data: deletedEmployee
+    });
+});
+
+export const ListEmployeesWithPagination = AsyncHandler(async (req, res) => {
+    let { page = 1, limit = 10 } = req.query;
+
+    // Convert to numbers
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const skip = (page - 1) * limit;
+
+    // Fetch paginated employees
+    const [employees, total] = await Promise.all([
+        EmployeeModel.find()
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 }), // Optional: sort by latest
+        EmployeeModel.countDocuments()
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return res.status(StatusCodes.OK).json({
+        message: "Employee list retrieved successfully",
+        data: employees,
+        pagination: {
+            total,
+            page,
+            totalPages,
+            limit
+        }
+    });
+});
+
+
+
 
