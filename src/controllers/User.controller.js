@@ -12,6 +12,7 @@ import { SignToken, VerifyToken } from "../utils/TokenGenerator.js";
 import { config } from "../config/env.config.js";
 import { SendMail } from "../utils/SendMail.js";
 import { BackendUrl } from "../constant.js";
+import { LoginModel } from "../models/LoginDetail.model.js";
 
 
 const now = moment();
@@ -43,6 +44,7 @@ export const CreateUser = AsyncHandler(async (req, res) => {
     const refresh_token = SignToken({ email: data.email, username: data.username }, "1day");
     const access_token = SignToken({ email: data.email, username: data.username }, "1day");
     const result = await UserModel.create({ ...data, refreshToken: refresh_token, userIp });
+    await LoginModel.create({userId:result._id,isMobile:data.isMobile,browser:data.browser,userIp});
     result.password = null;
 
     res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
@@ -58,7 +60,7 @@ export const CreateUser = AsyncHandler(async (req, res) => {
 });
 
 export const LoginUser = AsyncHandler(async (req, res) => {
-    const { username, password, browser, device } = req.body;
+    const { username, password, browser, isMobile } = req.body;
     const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
 
     const exist = await UserModel.findOne({ $or: [{ email: username }, { username }] });
@@ -71,11 +73,12 @@ export const LoginUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError("Bad Credintial", "LoginUser method");
     };
 
-
+    
 
     const refresh_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const access_token = SignToken({ email: exist.email, username: exist.username }, "1day");
-    const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token, userIp, browser, device }).select("fullName email phone username ");
+    const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token }).select("fullName email phone username ");
+    await LoginModel.create({userId:result._id,isMobile,browser,userIp});
     if (!exist.verification) {
        SendMail("email-verification.ejs", { userName: result.username, verificationLink: `${BackendUrl}/user/verify-email?token=${access_token}` }, { subject: "Verify Your Email", email: result.email })
         return res.status(StatusCodes.FORBIDDEN).json({
@@ -99,10 +102,13 @@ export const LogedInUser = AsyncHandler(async (req, res) => {
 });
 
 export const LogoutUser = AsyncHandler(async (req, res) => {
+    const {isMobile,browser} = req.body;
+    const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
     const user = await UserModel.findById(req?.CurrentUser._id);
     if (!user) {
         throw new NotFoundError("something Went wrong", "LogoutUser method");
     };
+    await LoginModel.create({userId:user._id,isMobile,browser,userIp});
     res.clearCookie('rjt').clearCookie("ajt").status(StatusCodes.ACCEPTED).json({
         message: "User loged out Successful"
     });

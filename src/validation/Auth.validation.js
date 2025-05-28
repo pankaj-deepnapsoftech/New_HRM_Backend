@@ -16,7 +16,7 @@ export const AuthValidation = object({
 export const LoginValidation = object({
     username: string().required("Username or Email is required field"),
     password: string().min(6).max(16).required("Password is required field"),
-    device: string().required("Device is required field"),
+    isMobile: string().required("Device is required field"),
     browser: string().required("Device is required field"),
 });
 
