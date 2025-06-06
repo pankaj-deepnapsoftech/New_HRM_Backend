@@ -7,6 +7,6 @@ import { ProjectValidation } from '../validation/Project.validation.js';
 const 	router = Router();
 
 router.route("/").get(Autherization, getAllProjectsWithPagination);
-router.route("/").post(Autherization, Validater(ProjectValidation));
+router.route("/").post(Autherization, Validater(ProjectValidation), createProjects);
 
 export default router;
