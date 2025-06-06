@@ -33,7 +33,7 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
     const Driving_Licance = files?.Driving_Licance && `${FileUrl}/${files.Driving_Licance[0].filename}`;
 
     const result = await EmployeeModel.create({ ...body, aadhaar, photo, pancard,Bank_Proof,Voter_Id,Driving_Licance,Emp_id:req?.CurrentUser?._id });
-
+ 
     return res.status(StatusCodes.CREATED).json({
         message: "Employee data Uploaded",
         data: result
@@ -138,6 +138,38 @@ export const ListEmployeesWithPagination = AsyncHandler(async (req, res) => {
     });
 });
 
+export const getEmployeesReport = AsyncHandler(async (req, res) => {
+    // const employeesList = await EmployeeModel.find({}).populate("Emp_id", "fullName email").select("Address Department Designation salary");
 
+    // employeesList.map((emp) => ({
+    //     ...emp,
+    //     fullName: emp.Emp_id?.fullName,
+    //     email: emp.Emp_id?.email
+    // }));
 
+    // return res.status(StatusCodes.OK).json({
+    //     success: true,
+    //     message: "Data fetched successfully",
+    //     data: employeesList
+    // });
+});
 
+export const getEmployeesLocations = AsyncHandler(async (req, res) => {
+    const employeesList = await EmployeeModel.find({}).populate("Emp_id", "fullName email employeeId").select("Address Department Designation").lean();
+
+    const flattendList = employeesList.map((emp) => ({
+        ...emp,
+        fullName: emp.Emp_id?.fullName,
+        email: emp.Emp_id?.email,
+        employeeId: emp.Emp_id?.employeeId
+    }));
+    delete flattendList.Emp_id;
+
+    flattendList.map(emp => delete emp.Emp_id);
+
+    return res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Data fetched successfully",
+        data: flattendList
+    });
+});
