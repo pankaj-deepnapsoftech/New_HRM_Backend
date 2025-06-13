@@ -138,6 +138,32 @@ export const ListEmployeesWithPagination = AsyncHandler(async (req, res) => {
     });
 });
 
+export const getEmployeeNamesOnly = AsyncHandler(async (req, res) => {
+    const employeesList = await EmployeeModel.aggregate([{
+    $lookup: {
+      from: "users",
+      localField: "Emp_id",
+      foreignField: "_id",
+      as: "userDetails"
+    }
+  },
+  {
+    $unwind: "$userDetails"
+  },
+  {
+    $project: {
+      Emp_id: 1,
+      fullName: "$userDetails.fullName",
+    }
+  }]);
+    
+    return res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Data fetched successfully",
+        data: employeesList
+    });
+});
+
 export const getEmployeesReport = AsyncHandler(async (req, res) => {
     // const employeesList = await EmployeeModel.find({}).populate("Emp_id", "fullName email").select("Address Department Designation salary");
 

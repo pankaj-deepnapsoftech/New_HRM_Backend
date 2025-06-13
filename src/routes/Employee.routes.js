@@ -1,7 +1,7 @@
 //employee.routes.js 
 
 import { Router } from "express";
-import { CreateEmployeeDetail, UpdateEmployeeDetail, DeleteEmployeeDetail, ListEmployeesWithPagination, getEmployeesReport, getEmployeesLocations } from "../controllers/Employee.controller.js";
+import { CreateEmployeeDetail, UpdateEmployeeDetail, DeleteEmployeeDetail, ListEmployeesWithPagination, getEmployeesReport, getEmployeesLocations, getEmployeeNamesOnly } from "../controllers/Employee.controller.js";
 import { upload } from "../config/multer.config.js";
 import { Autherization } from "../middleware/Autherization.js";
 import { Validater } from "../helper/Validator.js";
@@ -31,6 +31,7 @@ routes.route("/employee/:id").delete(Autherization, DeleteEmployeeDetail);
 routes.route("/employees").get(Autherization, ListEmployeesWithPagination);
 routes.route("/report").get(Autherization, getEmployeesReport);
 routes.route("/locations").get(Autherization, getEmployeesLocations);
+routes.route("/get-names-only").get(Autherization, getEmployeeNamesOnly);
 
 
 export default routes;
