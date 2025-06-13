@@ -100,13 +100,13 @@ export const LogedInUser = AsyncHandler(async (req, res) => {
         data: req?.CurrentUser
     })
 });
-
 export const LogoutUser = AsyncHandler(async (req, res) => {
+
     const {isMobile,browser} = req.body;
     const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
     const user = await UserModel.findById(req?.CurrentUser._id);
     if (!user) {
-        throw new NotFoundError("something Went wrong", "LogoutUser method");
+        throw new NotFoundError("something Went wrong","LogoutUser method");
     };
     await LoginModel.create({userId:user._id,isMobile,browser,userIp});
     res.clearCookie('rjt').clearCookie("ajt").status(StatusCodes.ACCEPTED).json({

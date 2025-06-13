@@ -10,12 +10,8 @@ import { config } from "./config/env.config.js";
 import RootRouter from "./routes/Routes.js";
 import {  CustomError } from "./utils/CustomError.js";
 
-
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-
 
 export const StartServer = (app) => {
     app.set('trust proxy', 1);

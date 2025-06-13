@@ -1,3 +1,5 @@
+//employee.routes.js 
+
 import { Router } from "express";
 import { CreateEmployeeDetail, UpdateEmployeeDetail, DeleteEmployeeDetail, ListEmployeesWithPagination, getEmployeesReport, getEmployeesLocations } from "../controllers/Employee.controller.js";
 import { upload } from "../config/multer.config.js";
