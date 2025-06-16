@@ -92,7 +92,6 @@ const BankVerificationSchema = new Schema({
 const EmpDataSchema = new Schema(
   {
     fname: String,
-    // fullName: String,
     lastName: { type: String, default: "" },
     email: { type: String, default: "" },
     password: { type: String, default: "" },

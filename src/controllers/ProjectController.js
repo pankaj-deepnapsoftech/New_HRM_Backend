@@ -23,7 +23,7 @@ export const getAllProjects = async (req, res) => {
     });
   }
 };
-   
+
 export const createProjects = async (req, res) => {
   try {
    
