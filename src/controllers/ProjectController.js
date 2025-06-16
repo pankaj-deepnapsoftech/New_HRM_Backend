@@ -20,9 +20,7 @@ export const getAllProjects = async (req, res) => {
       statusCode: 200,
       data: {
         projectDetails,
-        totalProjects,
         currentPage: page,
-        totalPages: Math.ceil(totalProjects / limit),
       },
       message: "Paginated project details",
     });
