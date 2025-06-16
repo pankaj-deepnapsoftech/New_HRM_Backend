@@ -1,6 +1,6 @@
-// models/Project.js
+// models/Projectmodel.js
 import mongoose from "mongoose";
-import "./UserModel.js"; 
+import "./EmpDataModel.js"; 
 
 const projectSchema = new mongoose.Schema({
   name: {
@@ -9,13 +9,13 @@ const projectSchema = new mongoose.Schema({
   },
   manager: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Users", 
+    ref: "EmpData", 
     required: true,
   },
   members: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Users", 
+      ref: "EmpData", 
     },
   ],
   startDate: {

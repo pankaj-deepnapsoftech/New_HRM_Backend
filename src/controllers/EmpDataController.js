@@ -33,7 +33,6 @@ export const getAllEmployees = async (req, res) => {
   }
 };
 
-
 // ✅ NEW: Add an asset to employee's assets array
 export const addAssetToEmployee = async (req, res) => {
   try {
