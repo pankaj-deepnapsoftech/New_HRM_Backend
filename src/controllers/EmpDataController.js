@@ -22,6 +22,29 @@ export const getAllEmployees = async (_req, res) => {
   }
 };
 
+// ✅ NEW: Add an asset to employee's assets array
+export const addAssetToEmployee = async (req, res) => {
+  try {
+    const empId = req.params.id;
+    const { asset } = req.body;
+
+    if (!asset) {
+      return res.status(400).json({ message: "Asset is required" });
+    }
+
+    const updated = await EmpData.findByIdAndUpdate(
+      empId,
+      { $push: { assets: asset } },  // 👉 push into array
+      { new: true }
+    );
+
+    res.status(200).json({ message: "Asset added successfully", data: updated });
+  } catch (err) {
+    res.status(400).json({ message: "Failed to add asset", error: err.message });
+  }
+};
+
+
 // Update employee by ID
 export const updateEmployee = async (req, res) => {
   try {
