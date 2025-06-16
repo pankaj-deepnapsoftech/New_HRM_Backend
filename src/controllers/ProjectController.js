@@ -4,25 +4,36 @@ import Project from '../models/projectModel.js';
 
 export const getAllProjects = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
     const projectDetails = await Project.find()
-      .populate({ path: 'manager', select: 'fname' }) 
+      .skip(skip)
+      .limit(limit)
+      .populate({ path: 'manager', select: 'fname' })
       .populate({ path: 'members', select: 'fname' });
+
+    const totalProjects = await Project.countDocuments();
 
     res.status(200).json({
       statusCode: 200,
       data: {
         projectDetails,
-        totalProjects: projectDetails.length,
+        totalProjects,
+        currentPage: page,
+        totalPages: Math.ceil(totalProjects / limit),
       },
-      message: "All project details"
+      message: "Paginated project details",
     });
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch projects",
-      error: error.message
+      error: error.message,
     });
   }
 };
+
 
 export const createProjects = async (req, res) => {
   try {
