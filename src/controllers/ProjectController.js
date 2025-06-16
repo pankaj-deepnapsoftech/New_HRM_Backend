@@ -49,36 +49,45 @@
 //     }
 //   });
 // });
- 
+
 
 
 import Project from '../models/projectModel.js';
 
 export const getAllProjects = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+   
     const projectDetails = await Project.find()
-      .populate({ path: 'manager', select: 'fullName' }) // not "name" 
+      .skip(skip)
+      .limit(limit)
+      .populate({ path: 'manager', select: 'fullName' })
       .populate({ path: 'members', select: 'fullName' });
+
+
 
     res.status(200).json({
       statusCode: 200,
       data: {
         projectDetails,
-        totalProjects: projectDetails.length,
+        currentPage: page,
       },
-      message: "All project details"
+      message: "All project details",
     });
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch projects",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
 export const createProjects = async (req, res) => {
   try {
-   
+
 
     const project = await Project.create(req.body);
 
@@ -88,7 +97,7 @@ export const createProjects = async (req, res) => {
       data: project,
     });
   } catch (err) {
-     
+
     res.status(500).json({
       success: false,
       message: 'Failed to create project',
