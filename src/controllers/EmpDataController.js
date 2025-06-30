@@ -4,9 +4,38 @@ import EmpData from "../models/EmpDataModel.js";
 // Create new employee
 export const addEmployee = async (req, res) => {
   try {
-    const employee = new EmpData(req.body);
-    await employee.save();
-    res.status(201).json({ message: "Employee added", data: employee });
+    const {
+      fname, lastName, email, phoneNumber, dob, empCode,
+      location, designation, department, date, salary
+    } = req.body;
+
+    const newEmp = new EmpData({
+      fname,
+      lastName,
+      email,
+      phoneNumber,
+      dob,
+      empCode,
+      location,
+      designation,
+      department,
+      date,
+      salary,
+      backgroundVerification: {
+        addhar: req.files?.addhar ? req.files.addhar[0].filename : "",
+        pan: req.files?.pan ? req.files.pan[0].filename : "",
+        voterCard: req.files?.voterCard ? req.files.voterCard[0].filename : "",
+        driving: req.files?.driving ? req.files.driving[0].filename : "",
+      },
+      bankVerification: {
+        bankProof: req.files?.bankProof ? req.files.bankProof[0].filename : "",
+      }
+    });
+
+    await newEmp.save();
+
+    res.status(201).json({ message: "Employee added", data: newEmp });
+
   } catch (err) {
     res.status(400).json({ message: "Failed to add employee", error: err.message });
   }
@@ -24,6 +53,7 @@ export const getAllEmployees = async (req, res) => {
   
 
     res.status(200).json({
+      
       message: "Paginated employees",
       data: employees,
       currentPage: page,
@@ -59,8 +89,23 @@ export const addAssetToEmployee = async (req, res) => {
 // Update employee by ID
 export const updateEmployee = async (req, res) => {
   try {
-    const updated = await EmpData.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Employee updated", data: updated });
+    const emp = await EmpData.findById(req.params.id);
+    if (!emp) return res.status(404).json({ message: "Employee not found" });
+
+    // Update fields
+    Object.assign(emp, req.body);
+
+    // Update files if uploaded
+    if (req.files?.addhar) emp.backgroundVerification.addhar = req.files.addhar[0].filename;
+    if (req.files?.pan) emp.backgroundVerification.pan = req.files.pan[0].filename;
+    if (req.files?.voterCard) emp.backgroundVerification.voterCard = req.files.voterCard[0].filename;
+    if (req.files?.driving) emp.backgroundVerification.driving = req.files.driving[0].filename;
+    if (req.files?.bankProof) emp.bankVerification.bankProof = req.files.bankProof[0].filename;
+
+    await emp.save();
+
+    res.status(200).json({ message: "Employee updated", data: emp });
+
   } catch (err) {
     res.status(400).json({ message: "Failed to update employee", error: err.message });
   }

@@ -112,7 +112,7 @@ const EmpDataSchema = new Schema(
     assets: { type: [String], default: [] },
     Empstatus: { type: String, default: "active" },
     lastSalaryIncrementDate: { type: Date, default: null },
-    advanceEligibilityYears: { type: Number, default: 2 },
+    advanceEligibilityYears: { type: Number, default: 2 }, 
     requestLeave: { type: [RequestLeaveSchema], default: [] },
     attendance: { type: [AttendanceSchema], default: [] },
     advanceRequests: { type: [Schema.Types.Mixed], default: [] },

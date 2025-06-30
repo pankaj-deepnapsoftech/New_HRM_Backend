@@ -14,7 +14,7 @@ export const getAllProjects = async (req, res) => {
       .populate({ path: 'manager', select: 'fname' })
       .populate({ path: 'members', select: 'fname' });
 
-    const totalProjects = await Project.countDocuments();
+    // const totalProjects = await Project.countDocuments();
 
     res.status(200).json({
       statusCode: 200,
