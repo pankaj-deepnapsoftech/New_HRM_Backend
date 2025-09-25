@@ -5,7 +5,8 @@ import {
   getAllEmployees,
   updateEmployee,
   deleteEmployee,
-  addAssetToEmployee  
+  addAssetToEmployee, 
+  removeAssetFromEmployee 
 } from "../controllers/EmpDataController.js";
 import {upload} from "../config/multer.config.js"; 
 
@@ -33,5 +34,6 @@ router.put("/:id", updateEmployee);
 router.delete("/:id", deleteEmployee);
 
 router.put("/:id/add-asset", addAssetToEmployee);
+router.put("/:id/remove-asset", removeAssetFromEmployee);
 
 export default router;

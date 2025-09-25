@@ -22,7 +22,7 @@ export const StartServer = (app) => {
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTION"],
         credentials: true,
     }));
-    app.use(cookieParser());
+    app.use(cookieParser());   
 
     app.get("/health", (_req, res) => { res.send("Server is running and healthy") });
 
