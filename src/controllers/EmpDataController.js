@@ -1,5 +1,6 @@
 // src/controllers/EmpDataController.js
 import EmpData from "../models/EmpDataModel.js";
+import { UserModel } from "../models/UserModel.js";
 
 // Create new employee
 export const addEmployee = async (req, res) => {
@@ -104,6 +105,78 @@ export const removeAssetFromEmployee = async (req, res) => {
     res.status(200).json({ message: "Asset removed successfully", data: updated });
   } catch (err) {
     res.status(400).json({ message: "Failed to remove asset", error: err.message });
+  }
+};
+
+// ✅ NEW: Create login credentials for an employee (User entry)
+export const createEmployeeCredentials = async (req, res) => {
+  try {
+    const empId = req.params.id;
+    let { email, password, fullName, phone } = req.body;
+    email = (email || "").trim().toLowerCase();
+    password = typeof password === "string" ? password.trim() : password;
+
+    const emp = await EmpData.findById(empId);
+    if (!emp) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    if (password && (password.length < 6 || password.length > 16)) {
+      return res.status(400).json({ message: "Password must be 6-16 characters" });
+    }
+
+    // Prefer matching by email first
+    let user = await UserModel.findOne({ email });
+    // Generate a unique username based on email local-part
+    const baseUsername = (email.split("@")[0] || "employee").toLowerCase();
+    const generateUniqueUsername = async () => {
+      let candidate = baseUsername;
+      let suffix = 1;
+      // ensure uniqueness against existing usernames
+      while (await UserModel.findOne({ username: candidate })) {
+        candidate = `${baseUsername}${suffix++}`;
+      }
+      return candidate;
+    };
+
+    if (!user) {
+      const username = await generateUniqueUsername();
+      const tempPassword = password || Math.random().toString(36).slice(-10) + "#A1";
+      user = await UserModel.create({
+        fullName: fullName || emp.fname || username,
+        email,
+        phone: phone || "0000000000",
+        username,
+        password: tempPassword,
+        role: "User",
+        verification: true,
+      });
+      // Include temp password in response if we generated it
+      // Note: password hashes are stored; we only echo the plain tempPassword here
+      var generatedPassword = tempPassword;
+    } else if (password) {
+      // If user already exists by email and admin provided a password, update it
+      await UserModel.findByIdAndUpdate(user._id, { password, verification: true });
+    }
+
+    // persist email on EmpData for dashboard visibility
+    if (!emp.email) {
+      emp.email = email;
+      await emp.save();
+    }
+
+    return res.status(200).json({
+      message: "Credentials created successfully",
+      data: { userId: user._id, email: user.email, username: user.username, tempPassword: generatedPassword },
+    });
+  } catch (err) {
+    if (err?.name === "CastError") {
+      return res.status(404).json({ message: "Invalid employee id" });
+    }
+    return res.status(400).json({ message: "Failed to create credentials", error: err?.message || "" });
   }
 };
 
