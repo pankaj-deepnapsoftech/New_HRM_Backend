@@ -45,12 +45,12 @@ export const addEmployee = async (req, res) => {
 // Get all employees
 export const getAllEmployees = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) ;
+    const limit = parseInt(req.query.limit) ;
 
     const skip = (page - 1) * limit;
 
-    const employees = await EmpData.find().skip(skip).limit(limit);
+    const employees = await EmpData.find();
   
 
     res.status(200).json({
