@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
     try {
-        const users = await UserModel.find({}, 'fullName _id'); // return only name + id
+        const users = await UserModel.find({}, 'fullName _id email'); // return only name + id
         res.status(200).json(users);
     } catch (err) {
         res.status(500).json({
