@@ -3,6 +3,8 @@ import { FileUrl } from "../constant.js";
 import { EmployeeModel } from "../models/Employee.model.js";
 import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { NotFoundError } from "../utils/CustomError.js";
+import { UserModel } from "../models/UserModel.js";
+import EmpData from "../models/EmpDataModel.js";
 
 
 
@@ -32,7 +34,58 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
     const Voter_Id = files?.Voter_Id &&  `${FileUrl}/${files.Voter_Id[0].filename}`;
     const Driving_Licance = files?.Driving_Licance && `${FileUrl}/${files.Driving_Licance[0].filename}`;
 
-    const result = await EmployeeModel.create({ ...body, aadhaar, photo, pancard,Bank_Proof,Voter_Id,Driving_Licance,Emp_id:req?.CurrentUser?._id });
+    // Optionally create a login user for the employee if email/password provided
+    let employeeUserId = req?.CurrentUser?._id;
+    const empEmail = body?.empEmail;
+    const empPassword = body?.empPassword;
+    const empFullName = body?.empFullName || body?.fullName;
+    const empPhone = body?.empPhone || body?.phone;
+
+    if (empEmail && empPassword) {
+        const username = (empEmail.split("@")[0] || "employee").toLowerCase();
+        const exist = await UserModel.findOne({ $or: [{ email: empEmail }, { username }] });
+        if (!exist) {
+            const userDoc = await UserModel.create({
+                fullName: empFullName || username,
+                email: empEmail,
+                phone: empPhone || "0000000000",
+                username,
+                password: empPassword,
+                role: "User",
+                verification: true,
+            });
+            employeeUserId = userDoc._id;
+        } else {
+            employeeUserId = exist._id;
+        }
+    }
+
+    const result = await EmployeeModel.create({
+        ...body,
+        aadhaar,
+        photo,
+        pancard,
+        Bank_Proof,
+        Voter_Id,
+        Driving_Licance,
+        Emp_id: employeeUserId
+    });
+
+    // Also create minimal EmpData record so it reflects in EmpDashboard
+    try {
+        await EmpData.create({
+            fname: empFullName || body?.fname || "",
+            email: empEmail || "",
+            department: body?.Department || "",
+            designation: body?.Designation || "",
+            salary: body?.salary || 0,
+            date: new Date().toISOString(),
+            empCode: body?.empCode || "",
+            location: body?.Address || "",
+          });
+    } catch (e) {
+        // non-blocking
+    }
  
     return res.status(StatusCodes.CREATED).json({
         message: "Employee data Uploaded",
