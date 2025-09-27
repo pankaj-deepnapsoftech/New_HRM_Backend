@@ -129,6 +129,9 @@ const EmpDataSchema = new Schema(
       type: BankVerificationSchema,
       default: {},
     },
+    sub_department:{
+      type:String
+    }
   },
   { timestamps: true }
 );
