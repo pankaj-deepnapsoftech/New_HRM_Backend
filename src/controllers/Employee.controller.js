@@ -77,7 +77,7 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
             fname: empFullName || body?.fname || "",
             email: empEmail || "",
             department: body?.Department || "",
-            sub_department: body?.sub_department || "",
+         
             designation: body?.Designation || "",
             salary: body?.salary || 0,
             date: new Date().toISOString(),
