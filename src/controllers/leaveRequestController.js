@@ -59,6 +59,8 @@ export const applyLeaveToFinal = async (requestDoc, session = null) => {
  */
 export const requestLeave = async (req, res) => {
   try {
+    // eslint-disable-next-line no-undef
+    console.log("ye hai requesy : ",req.body);
     const { employeeId, from, to, type, mode, description } = req.body;
     const file = req.file ? `/uploads/${req.file.filename}` : null;
 
