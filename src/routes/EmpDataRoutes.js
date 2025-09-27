@@ -9,33 +9,30 @@ import {
   removeAssetFromEmployee,
   createEmployeeCredentials 
 } from "../controllers/EmpDataController.js";
-import {upload} from "../config/multer.config.js"; 
+import {upload} from "../config/multer.config.js";
+import { Autherization } from "../middleware/Autherization.js";
+import { AdminAuthorization } from "../middleware/AdminAuthorization.js"; 
 
 const router = express.Router();
-router.post("/", upload.fields([
+router.post("/", Autherization, AdminAuthorization, upload.fields([
   { name: "addhar" },
   { name: "pan" },
   { name: "voterCard" },
   { name: "driving" },
   { name: "bankProof" }
 ]), addEmployee);
-
-router.put("/:id", upload.fields([
+router.get("/", Autherization, AdminAuthorization, getAllEmployees);
+router.put("/:id", Autherization, AdminAuthorization, upload.fields([
   { name: "addhar" },
   { name: "pan" },
   { name: "voterCard" },
   { name: "driving" },
   { name: "bankProof" }
 ]), updateEmployee);
+router.delete("/:id", Autherization, AdminAuthorization, deleteEmployee);
 
-
-router.post("/", addEmployee);
-router.get("/", getAllEmployees);
-router.put("/:id", updateEmployee);
-router.delete("/:id", deleteEmployee);
-
-router.put("/:id/add-asset", addAssetToEmployee);
-router.put("/:id/remove-asset", removeAssetFromEmployee);
-router.put("/:id/create-credentials", createEmployeeCredentials);
+router.put("/:id/add-asset", Autherization, AdminAuthorization, addAssetToEmployee);
+router.put("/:id/remove-asset", Autherization, AdminAuthorization, removeAssetFromEmployee);
+router.put("/:id/create-credentials", Autherization, AdminAuthorization, createEmployeeCredentials);
 
 export default router;

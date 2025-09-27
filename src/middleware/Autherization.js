@@ -10,7 +10,7 @@ export const Autherization = async (req, res, next) => {
 
         const { email } = VerifyToken(ajt);
         const user = await UserModel.findOne({ email }).select(
-            'fullName email phone username employeeId'
+            'fullName email phone username employeeId role'
         );
         if (!user) {
             next(
@@ -23,6 +23,7 @@ export const Autherization = async (req, res, next) => {
         req.CurrentUser = user;
         next();
     } catch (error) {
+        console.error('Authorization error:', error);
         return res.status(StatusCodes.UNAUTHORIZED).json({
             message: 'user not verify',
         });
