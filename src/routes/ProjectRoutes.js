@@ -17,11 +17,13 @@ import {
     createProjects,
     deleteProject,
 } from '../controllers/ProjectController.js';
+import { Autherization } from '../middleware/Autherization.js';
+import { AdminAuthorization } from '../middleware/AdminAuthorization.js';
 
 const router = express.Router();
 
-router.get('/', getAllProjects);
-router.post('/', createProjects);
-router.delete('/:id', deleteProject);
+router.get('/', Autherization, AdminAuthorization, getAllProjects);
+router.post('/', Autherization, AdminAuthorization, createProjects);
+router.delete('/:id', Autherization, AdminAuthorization, deleteProject);
 
 export default router;

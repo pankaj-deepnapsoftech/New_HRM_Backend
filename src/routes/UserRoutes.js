@@ -1,11 +1,13 @@
 // routes/UserRoutes.js
 import express from 'express';
 import { UserModel } from '../models/UserModel.js';
+import { Autherization } from '../middleware/Autherization.js';
+import { AdminAuthorization } from '../middleware/AdminAuthorization.js';
 
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', Autherization, AdminAuthorization, async (req, res) => {
     try {
         const users = await UserModel.find({}, 'fullName _id email'); // return only name + id
         res.status(200).json(users);

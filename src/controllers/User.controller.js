@@ -60,7 +60,7 @@ export const CreateUser = AsyncHandler(async (req, res) => {
 });
 
 export const LoginUser = AsyncHandler(async (req, res) => {
-    const { username, password, browser, isMobile } = req.body;
+    const { username, password, browser, isMobile, loginType } = req.body;
     const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
 
     const exist = await UserModel.findOne({ $or: [{ email: username }, { username }] });
@@ -73,11 +73,20 @@ export const LoginUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError("Bad Credintial", "LoginUser method");
     };
 
+    // Role-based login validation
+    if (loginType === "admin" && exist.role !== "Admin") {
+        throw new BadRequestError("Bad Credintial", "LoginUser method");
+    }
+    
+    if (loginType === "user" && exist.role === "Admin") {
+        throw new BadRequestError("Bad Credintial", "LoginUser method");
+    }
+
     
 
     const refresh_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const access_token = SignToken({ email: exist.email, username: exist.username }, "1day");
-    const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token }).select("fullName email phone username ");
+    const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token }).select("fullName email phone username role");
     await LoginModel.create({userId:result._id,isMobile,browser,userIp});
     if (!exist.verification) {
        SendMail("email-verification.ejs", { userName: result.username, verificationLink: `${BackendUrl}/user/verify-email?token=${access_token}` }, { subject: "Verify Your Email", email: result.email })

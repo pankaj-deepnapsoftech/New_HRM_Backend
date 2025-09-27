@@ -38,7 +38,7 @@ export const addEmployee = async (req, res) => {
 
         const nextNumber = (maxNum + 1).toString().padStart(3, '0');
         const empCode = `${deptPrefix}${nextNumber}`;
-        
+
 
         const newEmp = new EmpData({
             fname,
@@ -82,16 +82,17 @@ export const addEmployee = async (req, res) => {
 
 // Get all employees
 export const getAllEmployees = async (req, res) => {
-    try {
-        // const page = parseInt(req.query.page) || 1;
-        // const limit = parseInt(req.query.limit) || 10;
-        const page = parseInt(req.query.page);
-        const limit = parseInt(req.query.limit);
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
-        // const skip = (page - 1) * limit;
+    console.log(req.query.page);
+    console.log(req.query.limit);
 
-        // const employees = await EmpData.find().skip(skip).limit(limit);
-        const employees = await EmpData.find();
+    const skip = (page - 1) * limit;
+
+    const employees = await EmpData.find().skip(skip).limit(limit);
+  
 
         res.status(200).json({
             message: 'Paginated employees',
