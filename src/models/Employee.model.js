@@ -2,14 +2,14 @@ import { Schema,model } from "mongoose";
 
 
 const EmployeeShema = new Schema({
-    Emp_id:{type:Schema.Types.ObjectId,ref:"Users",required:true},
+    Emp_id:{type:Schema.Types.ObjectId,ref:"Employee",required:true},
     aadhaar:{type:String,required:true},
     pancard:{type:String,required:true},
     photo:{type:String,required:true},
-    Address:{type:String,required:true},
-    Department:{type:String,required:true},
-    Designation:{type:String,required:true},
-    salary:{type:Number,required:true},
+    // Address:{type:String,required:true},
+    // Department:{type:String,required:true},
+    // Designation:{type:String,required:true},
+    // salary:{type:Number,required:true},
     Driving_Licance:{type:String},
     Voter_Id:{type:String},
     UAN_number:{type:String},

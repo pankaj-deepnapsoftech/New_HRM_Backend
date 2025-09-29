@@ -14,7 +14,6 @@ export const addEmployee = async (req, res) => {
             location,
             designation,
             department,
-            sub_department,
             date,
             salary,
         } = req.body;
@@ -50,7 +49,6 @@ export const addEmployee = async (req, res) => {
             empCode,
             location,
             designation,
-            sub_department,
             department,
             date,
             salary,
@@ -70,8 +68,8 @@ export const addEmployee = async (req, res) => {
                     : '',
             },
         });
-       await newEmp.save();
-   
+
+        await newEmp.save();
 
         res.status(201).json({ message: 'Employee added', data: newEmp });
     } catch (err) {
@@ -87,7 +85,6 @@ export const getAllEmployees = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-
 
     const skip = (page - 1) * limit;
 

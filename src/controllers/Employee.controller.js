@@ -9,7 +9,7 @@ import EmpData from "../models/EmpDataModel.js";
 
 
 export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
-    const { body, files } = req;
+    const { body, files } = req;    
 
     if (!files?.aadhaar) {
         throw new NotFoundError("Aadhaar Card image not found", "CreateEmployeeDetail method");
@@ -76,13 +76,13 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
         await EmpData.create({
             fname: empFullName || body?.fname || "",
             email: empEmail || "",
-            department: body?.Department || "",
+            // department: body?.Department || "",
          
-            designation: body?.Designation || "",
-            salary: body?.salary || 0,
+            // designation: body?.Designation || "",
+            // salary: body?.salary || 0,
             date: new Date().toISOString(),
             empCode: body?.empCode || "",
-            location: body?.Address || "",
+            // location: body?.Address || "",
           });
     } catch (e) {
         // non-blocking
