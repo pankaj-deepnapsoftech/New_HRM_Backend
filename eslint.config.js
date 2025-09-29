@@ -10,7 +10,7 @@ export default defineConfig([
     plugins: { js },
     extends: ["js/recommended"],
     rules: {
-      "no-console": "warn",
+      
       "no-unused-vars": ["warn", { args: "none" }],
     },
   },

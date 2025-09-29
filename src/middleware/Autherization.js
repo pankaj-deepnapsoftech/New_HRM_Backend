@@ -23,7 +23,7 @@ export const Autherization = async (req, res, next) => {
         req.CurrentUser = user;
         next();
     } catch (error) {
-        console.error('Authorization error:', error);
+        console.log('Authorization error:', error);
         return res.status(StatusCodes.UNAUTHORIZED).json({
             message: 'user not verify',
         });
