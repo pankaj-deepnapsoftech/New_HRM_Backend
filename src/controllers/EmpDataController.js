@@ -160,7 +160,7 @@ export const removeAssetFromEmployee = async (req, res) => {
     }
 };
 
-// ✅ NEW: Create login credentials for an employee (User entry)
+
 export const createEmployeeCredentials = async (req, res) => {
     try {
         const empId = req.params.id;
