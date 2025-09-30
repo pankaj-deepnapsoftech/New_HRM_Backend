@@ -40,8 +40,8 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
         throw new NotFoundError("Emp_id not provided", "CreateEmployeeDetail method");
     }
 
-    const empData = await EmpData.findById(Emp_id).select("empCode");
-
+    const empData = await EmpData.findById(Emp_id).select("empCode fname ");
+    
     if (!empData) {
         throw new NotFoundError("EmpData not found for provided Emp_id", "CreateEmployeeDetail method");
     }
@@ -145,8 +145,9 @@ const [employees, total] = await Promise.all([
     EmployeeModel.find()
         .populate({
             path: "Emp_id",
-            select: "empCode" 
+            select: "empCode fname " 
         })
+      
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 }),
@@ -239,7 +240,7 @@ export const GetEmployeeDocumentDetailById = AsyncHandler(async (req, res) => {
         .lean();
 
     if (!employee) {
-        throw new NotFoundError("Employee not found", "GetEmployeeDetailById method");
+        throw new NotFoundError("Employee not found", "GetEmployeeDocumentDetailById method");
     }
 
     

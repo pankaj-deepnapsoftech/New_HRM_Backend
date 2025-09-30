@@ -2,12 +2,13 @@
 import express from "express";
 import {
   addEmployee,
-  getAllEmployees,
   updateEmployee,
   deleteEmployee,
   addAssetToEmployee, 
   removeAssetFromEmployee,
-  createEmployeeCredentials 
+  createEmployeeCredentials, 
+  getAllEmployeesWithPagination,
+  getAllEmployees
 } from "../controllers/EmpDataController.js";
 import {upload} from "../config/multer.config.js";
 import { Autherization } from "../middleware/Autherization.js";
@@ -21,7 +22,9 @@ router.post("/", Autherization, AdminAuthorization, upload.fields([
   { name: "driving" },
   { name: "bankProof" }
 ]), addEmployee);
-router.get("/", Autherization, AdminAuthorization, getAllEmployees);
+router.get("/", Autherization, AdminAuthorization, getAllEmployeesWithPagination);
+router.get('/all', getAllEmployees);
+
 router.put("/:id", Autherization, AdminAuthorization, upload.fields([
   { name: "addhar" },
   { name: "pan" },

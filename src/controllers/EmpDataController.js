@@ -79,9 +79,26 @@ export const addEmployee = async (req, res) => {
         });
     }
 };
-
-// Get all employees
+// Get all employees (no pagination)
 export const getAllEmployees = async (req, res) => {
+    try {
+        const employees = await EmpData.find();
+
+        res.status(200).json({
+            message: 'All employees fetched successfully',
+            data: employees,
+            total: employees.length,
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: 'Failed to fetch employees',
+            error: err.message,
+        });
+    }
+};
+
+// Get all employees with pagination
+export const getAllEmployeesWithPagination = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
