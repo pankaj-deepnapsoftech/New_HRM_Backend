@@ -63,37 +63,65 @@ export const LoginUser = AsyncHandler(async (req, res) => {
     const { username, password, browser, isMobile, loginType } = req.body;
     const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
 
-    const exist = await UserModel.findOne({ $or: [{ email: username }, { username }] });
-    if (!exist) {
-        throw new BadRequestError("Bad Credintial", "LoginUser method");
-    };
+    let exist;
+    let isEmployee = false;
 
-    const isCurrect = bcrypt.compareSync(password, exist.password);
-    if (!isCurrect) {
-        throw new BadRequestError("Bad Credintial", "LoginUser method");
-    };
+    // Always prefer EmpData (employee) if identifier exists there, regardless of loginType
+    const EmpData = (await import("../models/EmpDataModel.js")).default;
+    const empDoc = await EmpData.findOne({ $or: [{ email: username }, { username }] });
+    if (empDoc) {
+        isEmployee = true;
+        exist = empDoc;
+        const isCurrect = bcrypt.compareSync(password, exist.password);
+        if (!isCurrect) {
+            throw new BadRequestError("Bad Credintial", "LoginUser method");
+        }
+    } else {
+        // Fallback to Users for admin/user
+        exist = await UserModel.findOne({ $or: [{ email: username }, { username }] });
+        if (!exist) {
+            throw new BadRequestError("Bad Credintial", "LoginUser method");
+        }
 
-    // Role-based login validation
-    if (loginType === "admin" && exist.role !== "Admin") {
-        throw new BadRequestError("Bad Credintial", "LoginUser method");
-    }
-    
-    if (loginType === "user" && exist.role === "Admin") {
-        throw new BadRequestError("Bad Credintial", "LoginUser method");
+        const isCurrect = bcrypt.compareSync(password, exist.password);
+        if (!isCurrect) {
+            throw new BadRequestError("Bad Credintial", "LoginUser method");
+        }
+
+        // Role-based login validation for admin/user
+        if (loginType === "admin" && exist.role !== "Admin") {
+            throw new BadRequestError("Bad Credintial", "LoginUser method");
+        }
+        
+        if (loginType === "user" && exist.role === "Admin") {
+            throw new BadRequestError("Bad Credintial", "LoginUser method");
+        }
     }
 
     
 
     const refresh_token = SignToken({ email: exist.email, username: exist.username }, "1day");
     const access_token = SignToken({ email: exist.email, username: exist.username }, "1day");
-    const result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token }).select("fullName email phone username role");
-    await LoginModel.create({userId:result._id,isMobile,browser,userIp});
-    if (!exist.verification) {
-       SendMail("email-verification.ejs", { userName: result.username, verificationLink: `${BackendUrl}/user/verify-email?token=${access_token}` }, { subject: "Verify Your Email", email: result.email })
-        return res.status(StatusCodes.FORBIDDEN).json({
-            message: "Email send in your Register mail please verify"
-        })
+    
+    let result;
+    if (isEmployee) {
+        // For employee login - update EmpData (no verification check needed)
+        result = await exist.constructor.findByIdAndUpdate(exist._id, { refreshToken: refresh_token }).select("fname email phoneNumber username role");
+        await LoginModel.create({userId:result._id,isMobile,browser,userIp});
+    } else {
+        // For admin/user login - update UserModel
+        result = await UserModel.findByIdAndUpdate(exist._id, { refreshToken: refresh_token }).select("fullName email phone username role");
+        await LoginModel.create({userId:result._id,isMobile,browser,userIp});
+        
+        // Only check verification for admin/user login, not for employee
+        if (!exist.verification) {
+           SendMail("email-verification.ejs", { userName: result.username, verificationLink: `${BackendUrl}/user/verify-email?token=${access_token}` }, { subject: "Verify Your Email", email: result.email })
+            return res.status(StatusCodes.FORBIDDEN).json({
+                message: "Email send in your Register mail please verify"
+            })
+        }
     }
+    
     res.cookie("rjt", refresh_token, CookiesOptions(timeUntilMidnight)).cookie("ajt", access_token, CookiesOptions(timeUntilMidnight + (10 * 60 * 1000)));
     return res.status(StatusCodes.CREATED).json({
         message: "Login Successful",
@@ -113,11 +141,13 @@ export const LogoutUser = AsyncHandler(async (req, res) => {
 
     const {isMobile,browser} = req.body;
     const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
-    const user = await UserModel.findById(req?.CurrentUser._id);
-    if (!user) {
+    // Support both Users (admin/user) and EmpData (employee) sessions
+    let userIdToLog = req?.CurrentUser?._id;
+    if (!userIdToLog) {
         throw new NotFoundError("something Went wrong","LogoutUser method");
-    };
-    await LoginModel.create({userId:user._id,isMobile,browser,userIp});
+    }
+
+    await LoginModel.create({userId:userIdToLog,isMobile,browser,userIp});
     res.clearCookie('rjt').clearCookie("ajt").status(StatusCodes.ACCEPTED).json({
         message: "User loged out Successful"
     });
