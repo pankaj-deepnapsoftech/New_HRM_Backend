@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import EmpData from './EmpDataModel.js'
 const leaveEntrySchema = new mongoose.Schema(
   {
     from: { type: Date, required: true },
@@ -18,7 +18,7 @@ const leaveEntrySchema = new mongoose.Schema(
 
 const leaveSchema = new mongoose.Schema(
   {
-    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: "EmpData", required: true },
     month: { type: Number, required: true }, // 1-12
     year: { type: Number, required: true },
 
