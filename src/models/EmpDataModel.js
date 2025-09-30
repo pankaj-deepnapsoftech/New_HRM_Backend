@@ -17,6 +17,7 @@
 
 // models/EmpData.js
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const Schema = mongoose.Schema;
 
@@ -96,6 +97,9 @@ const EmpDataSchema = new Schema(
     email: { type: String, default: "" },
     password: { type: String, default: "" },
     confirmPassword: { type: String, default: "" },
+    username: { type: String, default: "" },
+    role: { type: String, default: "Employee", enum: ["Employee"] },
+    verification: { type: Boolean, default: true },
     phoneNumber: { type: String, default: "" },
     dob: { type: String, default: "" },
     empCode: { type: String, default: "" },
@@ -136,6 +140,22 @@ const EmpDataSchema = new Schema(
   { timestamps: true }
 );
 
+
+// Add bcrypt middleware for password hashing
+EmpDataSchema.pre('save', async function (next) {
+    if (this.isModified('password')) {
+        this.password = await bcrypt.hash(this.password, 10);
+    }
+    next();
+});
+
+EmpDataSchema.pre('findOneAndUpdate', async function (next) {
+    if (!this._update.password) {
+        return next();
+    }
+    this._update.password = await bcrypt.hash(this._update.password, 10);
+    next();
+});
 
 export default mongoose.model("EmpData", EmpDataSchema);
 

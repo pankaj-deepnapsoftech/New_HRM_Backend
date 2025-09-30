@@ -12,7 +12,7 @@ const UserSchema = new Schema({
     refreshToken: { type: String },
     verification: { type: Boolean, required: true, default: false },
     allowed_paths: { type: [String] },
-    role: { type: String, required: true,enum:["Admin","User","Employee"] },
+    role: { type: String, required: true,enum:["Admin","User"] },
 }, { timestamps: true });
 
 UserSchema.pre('save', async function (next) {

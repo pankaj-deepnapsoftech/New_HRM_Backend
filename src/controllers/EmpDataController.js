@@ -196,42 +196,26 @@ export const createEmployeeCredentials = async (req, res) => {
             return candidate;
         };
 
-        if (!user) {
-            const username = await generateUniqueUsername();
-            const tempPassword =
-                password || Math.random().toString(36).slice(-10) + '#A1';
-            user = await UserModel.create({
-                fullName: fullName || emp.fname || username,
-                email,
-                phone: phone || '0000000000',
-                username,
-                password: tempPassword,
-                role: 'User',
-                verification: true,
-            });
-            // Include temp password in response if we generated it
-            // Note: password hashes are stored; we only echo the plain tempPassword here
-            var generatedPassword = tempPassword;
-        } else if (password) {
-            // If user already exists by email and admin provided a password, update it
-            await UserModel.findByIdAndUpdate(user._id, {
-                password,
-                verification: true,
-            });
-        }
-
-        // persist email on EmpData for dashboard visibility
-        if (!emp.email) {
-            emp.email = email;
-            await emp.save();
-        }
+        // Update EmpData with credentials instead of creating User
+        const username = await generateUniqueUsername();
+        const tempPassword = password || Math.random().toString(36).slice(-10) + '#A1';
+        
+        // Update EmpData with login credentials
+        emp.email = email;
+        emp.password = tempPassword;
+        emp.username = username;
+        emp.role = 'Employee';
+        emp.verification = true;
+        await emp.save();
+        
+        var generatedPassword = tempPassword;
 
         return res.status(200).json({
             message: 'Credentials created successfully',
             data: {
-                userId: user._id,
-                email: user.email,
-                username: user.username,
+                employeeId: emp._id,
+                email: emp.email,
+                username: emp.username,
                 tempPassword: generatedPassword,
             },
         });

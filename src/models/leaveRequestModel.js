@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
+import EmpData from './EmpDataModel.js'
 
 const leaveRequestSchema = new mongoose.Schema(
   {
-    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: "EmpData", required: true },
     from: { type: Date, required: true },
     to: { type: Date, required: true },
     type: {
