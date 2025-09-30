@@ -86,9 +86,6 @@ export const getAllEmployees = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    console.log(req.query.page);
-    console.log(req.query.limit);
-
     const skip = (page - 1) * limit;
 
     const employees = await EmpData.find().skip(skip).limit(limit);
