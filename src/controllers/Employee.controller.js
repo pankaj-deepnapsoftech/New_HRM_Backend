@@ -11,89 +11,60 @@ import EmpData from "../models/EmpDataModel.js";
 export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
     const { body, files } = req;
 
+    // 🔹 Required file validations
     if (!files?.aadhaar) {
         throw new NotFoundError("Aadhaar Card image not found", "CreateEmployeeDetail method");
     }
-
     if (!files?.photo) {
         throw new NotFoundError("Photo not found", "CreateEmployeeDetail method");
     }
-
     if (!files?.pancard) {
         throw new NotFoundError("Pancard Proof not found", "CreateEmployeeDetail method");
     }
-
     if (!files?.Bank_Proof) {
         throw new NotFoundError("Bank Proof not found", "CreateEmployeeDetail method");
     }
 
+    // 🔹 Prepare file paths
     const aadhaar = `${FileUrl}/${files.aadhaar[0].filename}`;
     const photo = `${FileUrl}/${files.photo[0].filename}`;
     const pancard = `${FileUrl}/${files.pancard[0].filename}`;
     const Bank_Proof = `${FileUrl}/${files.Bank_Proof[0].filename}`;
-    const Voter_Id = files?.Voter_Id &&  `${FileUrl}/${files.Voter_Id[0].filename}`;
+    const Voter_Id = files?.Voter_Id && `${FileUrl}/${files.Voter_Id[0].filename}`;
     const Driving_Licance = files?.Driving_Licance && `${FileUrl}/${files.Driving_Licance[0].filename}`;
 
-    // Optionally create a login user for the employee if email/password provided
-    let employeeUserId = req?.CurrentUser?._id;
-    const empEmail = body?.empEmail;
-    const empPassword = body?.empPassword;
-    const empFullName = body?.empFullName || body?.fullName;
-    const empPhone = body?.empPhone || body?.phone;
 
-    if (empEmail && empPassword) {
-        const username = (empEmail.split("@")[0] || "employee").toLowerCase();
-        const exist = await UserModel.findOne({ $or: [{ email: empEmail }, { username }] });
-        if (!exist) {
-            const userDoc = await UserModel.create({
-                fullName: empFullName || username,
-                email: empEmail,
-                phone: empPhone || "0000000000",
-                username,
-                password: empPassword,
-                role: "User",
-                verification: true,
-            });
-            employeeUserId = userDoc._id;
-        } else {
-            employeeUserId = exist._id;
-        }
+    const Emp_id = body?._id;
+
+    if (!Emp_id) {
+        throw new NotFoundError("Emp_id not provided", "CreateEmployeeDetail method");
+    }
+
+    const empData = await EmpData.findById(Emp_id).select("empCode");
+
+    if (!empData) {
+        throw new NotFoundError("EmpData not found for provided Emp_id", "CreateEmployeeDetail method");
     }
 
     const result = await EmployeeModel.create({
         ...body,
+        empCode: empData.empCode,
         aadhaar,
         photo,
         pancard,
         Bank_Proof,
         Voter_Id,
         Driving_Licance,
-        Emp_id: employeeUserId
+        Emp_id, 
     });
 
-    // Also create minimal EmpData record so it reflects in EmpDashboard
-    try {
-        await EmpData.create({
-            fname: empFullName || body?.fname || "",
-            email: empEmail || "",
-            department: body?.Department || "",
-         
-            designation: body?.Designation || "",
-            salary: body?.salary || 0,
-            date: new Date().toISOString(),
-            empCode: body?.empCode || "",
-            location: body?.Address || "",
-          });
-    } catch (e) {
-        // non-blocking
-    }
- 
     return res.status(StatusCodes.CREATED).json({
         message: "Employee data Uploaded",
-        data: result
+        data: result,
     });
-
 });
+
+
 
 
 export const UpdateEmployeeDetail = AsyncHandler(async (req, res) => {
@@ -170,13 +141,18 @@ export const ListEmployeesWithPagination = AsyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch paginated employees
-    const [employees, total] = await Promise.all([
-        EmployeeModel.find()
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 }), // Optional: sort by latest
-        EmployeeModel.countDocuments()
-    ]);
+const [employees, total] = await Promise.all([
+    EmployeeModel.find()
+        .populate({
+            path: "Emp_id",
+            select: "empCode" 
+        })
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
+    EmployeeModel.countDocuments()
+]);
+
 
     const totalPages = Math.ceil(total / limit);
 
