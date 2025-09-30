@@ -1,4 +1,23 @@
-import mongoose from 'mongoose';
+// // src/models/EmpDataModel.js
+// import mongoose from "mongoose";
+
+// const empDataSchema = new mongoose.Schema({
+//   fname: { type: String, required: true },
+//   department: { type: String, required: true },
+//   designation: { type: String, required: true },
+//   empCode: { type: String, required: true },
+//   salary: { type: Number, required: true },
+//   date: { type: Date, required: true },
+// }, { timestamps: true });
+
+// const EmpData = mongoose.model("EmpData", empDataSchema);
+// export default EmpData;
+  
+ 
+
+// models/EmpData.js
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const Schema = mongoose.Schema;
 
@@ -100,4 +119,22 @@ const EmpDataSchema = new Schema(
     { timestamps: true }
 );
 
-export default mongoose.model('EmpData', EmpDataSchema);
+
+// Add bcrypt middleware for password hashing
+EmpDataSchema.pre('save', async function (next) {
+    if (this.isModified('password')) {
+        this.password = await bcrypt.hash(this.password, 10);
+    }
+    next();
+});
+
+EmpDataSchema.pre('findOneAndUpdate', async function (next) {
+    if (!this._update.password) {
+        return next();
+    }
+    this._update.password = await bcrypt.hash(this._update.password, 10);
+    next();
+});
+
+export default mongoose.model("EmpData", EmpDataSchema);
+

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import EmpData from './EmpDataModel.js'
 const leaveEntrySchema = new mongoose.Schema(
   {
     from: { type: Date, required: true },
