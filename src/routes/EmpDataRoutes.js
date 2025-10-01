@@ -9,7 +9,8 @@ import {
   createEmployeeCredentials, 
   getAllEmployeesWithPagination,
   getAllEmployees,
-  getEmployeeLeaveSummary
+  getEmployeeLeaveSummary,
+  getAssetByEmpId
 } from "../controllers/EmpDataController.js";
 import {upload} from "../config/multer.config.js";
 import { Autherization } from "../middleware/Autherization.js";
@@ -25,7 +26,7 @@ router.post("/", Autherization, AdminAuthorization, upload.fields([
 ]), addEmployee);
 router.get("/", Autherization, AdminAuthorization, getAllEmployeesWithPagination);
 router.get('/all', getAllEmployees);
-
+router.get('/:id', Autherization, getAssetByEmpId)
 router.put("/:id", Autherization, AdminAuthorization, upload.fields([
   { name: "addhar" },
   { name: "pan" },

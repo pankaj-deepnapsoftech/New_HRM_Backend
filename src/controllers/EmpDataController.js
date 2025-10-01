@@ -2,7 +2,7 @@
 import EmpData from '../models/EmpDataModel.js';
 import { UserModel } from '../models/UserModel.js';
 
-// Create new employee
+
 export const addEmployee = async (req, res) => {
     try {
         const {
@@ -78,7 +78,7 @@ export const addEmployee = async (req, res) => {
         });
     }
 };
-// Get all employees (no pagination)
+
 export const getAllEmployees = async (req, res) => {
     try {
         const employees = await EmpData.find();
@@ -96,11 +96,10 @@ export const getAllEmployees = async (req, res) => {
     }
 };
 
-// Get all employees with pagination
 export const getAllEmployeesWithPagination = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
 
         const skip = (page - 1) * limit;
 
@@ -126,7 +125,6 @@ export const getAllEmployeesWithPagination = async (req, res) => {
 };
 
 
-// ✅ NEW: Add an asset to employee's assets array
 export const addAssetToEmployee = async (req, res) => {
     try {
         const empId = req.params.id;
@@ -154,7 +152,7 @@ export const addAssetToEmployee = async (req, res) => {
     }
 };
 
-// ✅ NEW: Remove an asset from employee's assets array
+
 export const removeAssetFromEmployee = async (req, res) => {
     try {
         const empId = req.params.id;
@@ -181,6 +179,24 @@ export const removeAssetFromEmployee = async (req, res) => {
         });
     }
 };
+export const getAssetByEmpId = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const empData = await EmpData.findById(id)
+            .select('fname empCode assets ') 
+           
+
+        if (!empData) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+
+        res.status(200).json(empData);
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Server error' });
+    }
+};
+
 
 
 export const createEmployeeCredentials = async (req, res) => {
@@ -221,7 +237,7 @@ export const createEmployeeCredentials = async (req, res) => {
         // Update EmpData with credentials instead of creating User
         const username = await generateUniqueUsername();
         const tempPassword = password || Math.random().toString(36).slice(-10) + '#A1';
-        
+
         // Update EmpData with login credentials
         emp.email = email;
         emp.password = tempPassword;
@@ -229,7 +245,7 @@ export const createEmployeeCredentials = async (req, res) => {
         emp.role = 'Employee';
         emp.verification = true;
         await emp.save();
-        
+
         var generatedPassword = tempPassword;
 
         return res.status(200).json({
