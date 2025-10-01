@@ -22,7 +22,8 @@ import ProjectRoutes from "./ProjectRoutes.js";
 import UsersRoutes from "./UserRoutes.js"; 
 import EmpDataRoutes from "./EmpDataRoutes.js"; 
 import DepartmentRoutes from "./DepartmentsRoutes.js";
-import LeaveRoutes from './leaveRoutes.js'
+import LeaveRoutes from './leaveRoutes.js';
+import TermsAndConditionsRoutes from './TermsAndConditions.routes.js';
 
 const router = Router();
 router.use("/user", UserRoutes);
@@ -31,7 +32,8 @@ router.use("/projects", ProjectRoutes);
 router.use("/users", UsersRoutes); 
 router.use("/empdata", EmpDataRoutes); 
 router.use("/departments",DepartmentRoutes);
-router.use("/leaves",LeaveRoutes)
+router.use("/leaves",LeaveRoutes);
+router.use("/terms", TermsAndConditionsRoutes);
 export default router;
 
 

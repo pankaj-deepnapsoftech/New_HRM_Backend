@@ -67,6 +67,15 @@ const ShowCauseNoticeSchema = new Schema({
     reviewedAt: Date,
 });
 
+const TermsAndConditionsSchema = new Schema({
+    submitted: { type: Boolean, default: false },
+    submittedAt: { type: Date, default: null },
+    version: { type: String, default: "1.0" },
+    ipAddress: String,
+    userAgent: String,
+    agreementText: String,
+});
+
 const RequestLeaveSchema = new Schema({
     fromDate: String,
     toDate: String,
@@ -107,6 +116,7 @@ const EmpDataSchema = new Schema(
         reimbursement: { type: [Schema.Types.Mixed], default: [] },
         gatePassRequests: { type: [GatePassRequestSchema], default: [] },
         showCauseNotices: { type: [ShowCauseNoticeSchema], default: [] },
+        termsAndConditions: { type: TermsAndConditionsSchema, default: {} },
         verificationDetails: {
             type: Schema.Types.ObjectId,
             ref: 'Employee',
