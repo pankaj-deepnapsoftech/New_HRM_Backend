@@ -1,4 +1,4 @@
-import { StatusCodes } from "http-status-codes";
+    import { StatusCodes } from "http-status-codes";
 import moment from "moment";
 import bcrypt from "bcrypt";
 import {fileURLToPath} from "url";
@@ -41,9 +41,15 @@ export const CreateUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError("User Already Exist", "CreateUser method");
     };
 
+    // Allow only the very first signup. If any user already exists, block further signups.
+    const usersCount = await UserModel.countDocuments();
+    if (usersCount > 0) {
+        throw new BadRequestError("Admin already exist", "CreateUser method");
+    }
+
     const refresh_token = SignToken({ email: data.email, username: data.username }, "1day");
     const access_token = SignToken({ email: data.email, username: data.username }, "1day");
-    const result = await UserModel.create({ ...data, refreshToken: refresh_token, userIp });
+    const result = await UserModel.create({ ...data, role: 'Admin', refreshToken: refresh_token, userIp });
     await LoginModel.create({userId:result._id,isMobile:data.isMobile,browser:data.browser,userIp});
     result.password = null;
 
