@@ -14,7 +14,6 @@ export const addEmployee = async (req, res) => {
             location,
             designation,
             department,
-            sub_department,
             date,
             salary,
         } = req.body;
@@ -40,7 +39,6 @@ export const addEmployee = async (req, res) => {
         const nextNumber = (maxNum + 1).toString().padStart(3, '0');
         const empCode = `${deptPrefix}${nextNumber}`;
 
-
         const newEmp = new EmpData({
             fname,
             lastName,
@@ -50,7 +48,6 @@ export const addEmployee = async (req, res) => {
             empCode,
             location,
             designation,
-            sub_department,
             department,
             date,
             salary,
@@ -70,8 +67,8 @@ export const addEmployee = async (req, res) => {
                     : '',
             },
         });
-       await newEmp.save();
-   
+
+        await newEmp.save();
 
         res.status(201).json({ message: 'Employee added', data: newEmp });
     } catch (err) {
@@ -81,18 +78,39 @@ export const addEmployee = async (req, res) => {
         });
     }
 };
-
-// Get all employees
+// Get all employees (no pagination)
 export const getAllEmployees = async (req, res) => {
+    try {
+        const employees = await EmpData.find();
+
+        res.status(200).json({
+            message: 'All employees fetched successfully',
+            data: employees,
+            total: employees.length,
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: 'Failed to fetch employees',
+            error: err.message,
+        });
+    }
+};
+
+// Get all employees with pagination
+export const getAllEmployeesWithPagination = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
+        const skip = (page - 1) * limit;
 
-    const skip = (page - 1) * limit;
-
-    const employees = await EmpData.find().skip(skip).limit(limit);
-  
+        const employees = await EmpData.find()
+            .populate({
+                path: 'verificationDetails',
+                select: 'aadhaar pancard photo Bank_Proof Voter_Id Driving_Licance UAN_number Bank_Account Bank_Name IFSC_Code',
+            })
+            .skip(skip)
+            .limit(limit);
 
         res.status(200).json({
             message: 'Paginated employees',
@@ -163,7 +181,7 @@ export const removeAssetFromEmployee = async (req, res) => {
     }
 };
 
-// ✅ NEW: Create login credentials for an employee (User entry)
+
 export const createEmployeeCredentials = async (req, res) => {
     try {
         const empId = req.params.id;
@@ -199,42 +217,26 @@ export const createEmployeeCredentials = async (req, res) => {
             return candidate;
         };
 
-        if (!user) {
-            const username = await generateUniqueUsername();
-            const tempPassword =
-                password || Math.random().toString(36).slice(-10) + '#A1';
-            user = await UserModel.create({
-                fullName: fullName || emp.fname || username,
-                email,
-                phone: phone || '0000000000',
-                username,
-                password: tempPassword,
-                role: 'User',
-                verification: true,
-            });
-            // Include temp password in response if we generated it
-            // Note: password hashes are stored; we only echo the plain tempPassword here
-            var generatedPassword = tempPassword;
-        } else if (password) {
-            // If user already exists by email and admin provided a password, update it
-            await UserModel.findByIdAndUpdate(user._id, {
-                password,
-                verification: true,
-            });
-        }
-
-        // persist email on EmpData for dashboard visibility
-        if (!emp.email) {
-            emp.email = email;
-            await emp.save();
-        }
+        // Update EmpData with credentials instead of creating User
+        const username = await generateUniqueUsername();
+        const tempPassword = password || Math.random().toString(36).slice(-10) + '#A1';
+        
+        // Update EmpData with login credentials
+        emp.email = email;
+        emp.password = tempPassword;
+        emp.username = username;
+        emp.role = 'Employee';
+        emp.verification = true;
+        await emp.save();
+        
+        var generatedPassword = tempPassword;
 
         return res.status(200).json({
             message: 'Credentials created successfully',
             data: {
-                userId: user._id,
-                email: user.email,
-                username: user.username,
+                employeeId: emp._id,
+                email: emp.email,
+                username: emp.username,
                 tempPassword: generatedPassword,
             },
         });
