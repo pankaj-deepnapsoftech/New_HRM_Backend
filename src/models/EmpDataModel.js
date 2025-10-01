@@ -123,7 +123,7 @@ const EmpDataSchema = new Schema(
     showCauseNotices: { type: [ShowCauseNoticeSchema], default: [] },
     backgroundVerification: {
       type: BackgroundVerificationSchema,
-      default: {},
+      default: {},  
     },
     bankVerification: {
       type: BankVerificationSchema,
