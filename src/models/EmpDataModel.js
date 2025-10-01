@@ -125,6 +125,10 @@ const EmpDataSchema = new Schema(
         sub_department: {
             type: String,
         },
+        // Leave accounting fields
+        allocatedLeaves: { type: Number, default: 18 },
+        usedLeaves: { type: Number, default: 0 },
+        remainingLeaves: { type: Number, default: 18 },
     },
     { timestamps: true }
 );

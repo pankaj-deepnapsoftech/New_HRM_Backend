@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import LeaveRequest from '../models/leaveRequestModel.js';
 import Leave from '../models/leaveModel.js';
+import EmpData from '../models/EmpDataModel.js';
 
 /**
  * Helper: normalize date to midnight (local)
@@ -13,6 +14,7 @@ const normalize = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
  */
 export const applyLeaveToFinal = async (requestDoc, session = null) => {
     const { employeeId, from, to, type, mode, description, file } = requestDoc;
+
     let current = normalize(new Date(from));
     const toDate = normalize(new Date(to));
     const msPerDay = 24 * 60 * 60 * 1000;
@@ -52,6 +54,21 @@ export const applyLeaveToFinal = async (requestDoc, session = null) => {
 
         // next month
         current = new Date(year, month, 1); // 1st of next month
+    }
+
+    // Update EmpData leave accounting inside the same transaction
+    const startDate = normalize(new Date(from));
+    const totalDays = Math.floor((toDate - startDate) / msPerDay) + 1;
+    const totalEffectiveDays = mode === 'half' ? totalDays * 0.5 : totalDays;
+    const emp = await EmpData.findById(employeeId).session(session);
+    if (emp) {
+        const allocated = typeof emp.allocatedLeaves === 'number' ? emp.allocatedLeaves : 18;
+        const used = typeof emp.usedLeaves === 'number' ? emp.usedLeaves : 0;
+        const newUsed = used + totalEffectiveDays;
+        const newRemaining = Math.max(0, allocated - newUsed);
+        emp.usedLeaves = newUsed;
+        emp.remainingLeaves = newRemaining;
+        await emp.save({ session });
     }
 };
 
@@ -143,7 +160,7 @@ export const updateLeaveStatus = async (req, res) => {
 /**
  * List pending requests (for HR dashboard)
  */
-export const getPendingRequests = async (req, res) => {
+export const getPendingRequests = async (_req, res) => {
     try {
         const pending = await LeaveRequest.find({ status: 'pending' })
             .populate({ path: 'employeeId', select: 'fname empCode' })

@@ -125,6 +125,7 @@ export const getAllEmployeesWithPagination = async (req, res) => {
     }
 };
 
+
 // ✅ NEW: Add an asset to employee's assets array
 export const addAssetToEmployee = async (req, res) => {
     try {
@@ -295,5 +296,26 @@ export const deleteEmployee = async (req, res) => {
             message: 'Failed to delete employee',
             error: err.message,
         });
+    }
+};
+
+// Get leave summary for an employee
+export const getEmployeeLeaveSummary = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const emp = await EmpData.findById(employeeId).select('allocatedLeaves usedLeaves remainingLeaves');
+        if (!emp) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+        return res.status(200).json({
+            message: 'Leave summary fetched',
+            data: {
+                allocatedLeaves: emp.allocatedLeaves ?? 0,
+                usedLeaves: emp.usedLeaves ?? 0,
+                remainingLeaves: emp.remainingLeaves ?? Math.max(0, (emp.allocatedLeaves ?? 0) - (emp.usedLeaves ?? 0)),
+            },
+        });
+    } catch (err) {
+        return res.status(500).json({ message: 'Failed to fetch leave summary', error: err.message });
     }
 };
