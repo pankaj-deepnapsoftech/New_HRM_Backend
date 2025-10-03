@@ -1,6 +1,8 @@
 // src/controllers/EmpDataController.js
 import EmpData from '../models/EmpDataModel.js';
 import { UserModel } from '../models/UserModel.js';
+import Attendance from '../models/AttendanceModel.js';
+import moment from 'moment';
 
 
 export const addEmployee = async (req, res) => {
@@ -202,7 +204,7 @@ export const getAssetByEmpId = async (req, res) => {
 export const createEmployeeCredentials = async (req, res) => {
     try {
         const empId = req.params.id;
-        let { email, password, fullName, phone } = req.body;
+        let { email, password } = req.body;
         email = (email || '').trim().toLowerCase();
         password = typeof password === 'string' ? password.trim() : password;
 
@@ -221,7 +223,7 @@ export const createEmployeeCredentials = async (req, res) => {
         }
 
         // Prefer matching by email first
-        let user = await UserModel.findOne({ email });
+        await UserModel.findOne({ email });
         // Generate a unique username based on email local-part
         const baseUsername = (email.split('@')[0] || 'employee').toLowerCase();
         const generateUniqueUsername = async () => {
@@ -310,6 +312,169 @@ export const deleteEmployee = async (req, res) => {
     } catch (err) {
         res.status(400).json({
             message: 'Failed to delete employee',
+            error: err.message,
+        });
+    }
+};
+
+// Mark attendance for login (first login of the day only)
+export const markLoginAttendance = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const currentDate = moment().format('YYYY-MM-DD');
+        const currentTime = moment().format('HH:mm:ss');
+        
+        const emp = await EmpData.findById(employeeId);
+        if (!emp) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+
+        // Check if attendance already exists for today in new collection
+        let todayAttendance = await Attendance.findOne({
+            employeeId: employeeId,
+            date: currentDate
+        });
+
+        if (todayAttendance) {
+            // If attendance already exists for today, don't change login time
+            // Only update status if needed and lastLoginTime in EmpData
+            todayAttendance.status = 'Present';
+            emp.lastLoginTime = currentTime;
+            await todayAttendance.save();
+            await emp.save();
+            // Keep the original loginTime - don't update it
+        } else {
+            // Create new attendance record only if it's first login of the day
+            todayAttendance = await Attendance.create({
+                employeeId: employeeId,
+                date: currentDate,
+                status: 'Present',
+                loginTime: currentTime,
+                logoutTime: ''
+            });
+            emp.lastLoginTime = currentTime;
+            await emp.save();
+        }
+
+        res.status(200).json({
+            message: 'Login attendance marked successfully',
+            data: {
+                employeeId: emp._id,
+                name: emp.fname,
+                email: emp.email,
+                date: currentDate,
+                loginTime: todayAttendance.loginTime,
+                status: 'Present'
+            }
+        });
+    } catch (err) {
+        res.status(400).json({
+            message: 'Failed to mark login attendance',
+            error: err.message,
+        });
+    }
+};
+
+// Mark attendance for logout
+export const markLogoutAttendance = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const currentDate = moment().format('YYYY-MM-DD');
+        const currentTime = moment().format('HH:mm:ss');
+        
+        const emp = await EmpData.findById(employeeId);
+        if (!emp) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+
+        // Find today's attendance record in new collection
+        const todayAttendance = await Attendance.findOne({
+            employeeId: employeeId,
+            date: currentDate
+        });
+
+        if (todayAttendance && todayAttendance.loginTime) {
+            // Update logout time
+            todayAttendance.logoutTime = currentTime;
+            emp.logoutTime = currentTime;
+            
+            // Calculate working hours
+            if (todayAttendance.loginTime && todayAttendance.logoutTime) {
+                const loginMoment = moment(`${currentDate} ${todayAttendance.loginTime}`, 'YYYY-MM-DD HH:mm:ss');
+                const logoutMoment = moment(`${currentDate} ${todayAttendance.logoutTime}`, 'YYYY-MM-DD HH:mm:ss');
+                const workingHours = logoutMoment.diff(loginMoment, 'hours', true);
+                todayAttendance.totalWorkingHours = workingHours.toFixed(2) + ' hours';
+            }
+            
+            await todayAttendance.save();
+            await emp.save();
+
+            res.status(200).json({
+                message: 'Logout attendance marked successfully',
+                data: {
+                    employeeId: emp._id,
+                    name: emp.fname,
+                    email: emp.email,
+                    date: currentDate,
+                    loginTime: todayAttendance.loginTime,
+                    logoutTime: currentTime,
+                    status: todayAttendance.status,
+                    totalWorkingHours: todayAttendance.totalWorkingHours
+                }
+            });
+        } else {
+            res.status(400).json({
+                message: 'No login attendance found for today. Please login first.',
+            });
+        }
+    } catch (err) {
+        res.status(400).json({
+            message: 'Failed to mark logout attendance',
+            error: err.message,
+        });
+    }
+};
+
+// Get daily attendance report
+export const getDailyAttendance = async (req, res) => {
+    try {
+        const { date } = req.query;
+        const targetDate = date || moment().format('YYYY-MM-DD');
+        
+        // Get all employees
+        const employees = await EmpData.find({}).select('fname email lastLoginTime logoutTime');
+        
+        // Get attendance data from new collection for the specific date
+        const attendanceData = await Attendance.find({ date: targetDate }).populate('employeeId', 'fname email');
+        
+        // Create attendance map for quick lookup
+        const attendanceMap = {};
+        attendanceData.forEach(att => {
+            attendanceMap[att.employeeId._id] = att;
+        });
+        
+        const attendanceReport = employees.map(emp => {
+            const dayAttendance = attendanceMap[emp._id];
+            
+            return {
+                _id: emp._id,
+                fname: emp.fname,
+                email: emp.email,
+                status: dayAttendance ? dayAttendance.status : 'Absent',
+                loginTime: dayAttendance ? dayAttendance.loginTime : '',
+                logoutTime: dayAttendance ? dayAttendance.logoutTime : '',
+                totalWorkingHours: dayAttendance ? dayAttendance.totalWorkingHours : '',
+                date: targetDate
+            };
+        });
+
+        res.status(200).json({
+            message: 'Daily attendance report retrieved successfully',
+            data: attendanceReport
+        });
+    } catch (err) {
+        res.status(400).json({
+            message: 'Failed to get daily attendance report',
             error: err.message,
         });
     }

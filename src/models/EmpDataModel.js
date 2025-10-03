@@ -21,12 +21,6 @@ import bcrypt from "bcrypt";
 
 const Schema = mongoose.Schema;
 
-const AttendanceSchema = new Schema({
-    date: String,
-    status: String,
-    loginTime: String,
-});
-
 const NoteSchema = new Schema({
     text: String,
     timestamp: {
@@ -109,7 +103,6 @@ const EmpDataSchema = new Schema(
         lastSalaryIncrementDate: { type: Date, default: null },
         advanceEligibilityYears: { type: Number, default: 2 },
         requestLeave: { type: [RequestLeaveSchema], default: [] },
-        attendance: { type: [AttendanceSchema], default: [] },
         advanceRequests: { type: [Schema.Types.Mixed], default: [] },
         notes: { type: [NoteSchema], default: [] },
         incentive: { type: [IncentiveSchema], default: [] },
