@@ -1,6 +1,9 @@
 // src/controllers/EmpDataController.js
 import EmpData from '../models/EmpDataModel.js';
 import { UserModel } from '../models/UserModel.js';
+import TerminatedEmployees from '../models/TerminatedEmployeesModel.js';
+import { EmployeeModel } from '../models/Employee.model.js';
+import mongoose from 'mongoose';
 
 // Create new employee
 export const addEmployee = async (req, res) => {
@@ -296,4 +299,114 @@ export const deleteEmployee = async (req, res) => {
             error: err.message,
         });
     }
+};
+
+
+export const terminateEmployee = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { id } = req.params;
+
+    // Find the employee in EmpData
+    const emp = await EmpData.findById(id).session(session);
+    if (!emp) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    // Create a new document in TerminatedEmployees
+    const terminatedEmpData = {
+      ...emp.toObject(), // Copy all fields
+      _id: new mongoose.Types.ObjectId(), // Generate new ID
+      terminationDate: new Date(), // Set termination date
+      Empstatus: 'Terminated', // Ensure status is Terminated
+    };
+    const terminatedEmp = await TerminatedEmployees.create([terminatedEmpData], { session });
+
+    // Update Employee collection to point to TerminatedEmployees
+    if (emp.verificationDetails) {
+      await EmployeeModel.findByIdAndUpdate(
+        emp.verificationDetails,
+        { Emp_id: terminatedEmp[0]._id, refCollection: 'TerminatedEmployees' }, // NEW: Track collection
+        { session }
+      );
+    }
+
+    // Delete from EmpData
+    await EmpData.findByIdAndDelete(id, { session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: 'Employee terminated and moved to TerminatedEmployees', data: terminatedEmp[0] });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400).json({
+      message: 'Failed to terminate employee',
+      error: err.message,
+    });
+  }
+};
+
+
+export const getAllTerminatedEmployees = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const employees = await TerminatedEmployees.find()
+      .populate({
+        path: "verificationDetails",
+        select: "aadhaar pancard photo Bank_Proof Voter_Id Driving_Licance UAN_number Bank_Account Bank_Name IFSC_Code"
+      })
+      .skip(skip)
+      .limit(limit)
+      .sort({ terminationDate: -1 }); // Sort by most recent termination
+
+    const total = await TerminatedEmployees.countDocuments();
+
+    res.status(200).json({
+      message: 'Paginated terminated employees',
+      data: employees,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: 'Failed to fetch terminated employees',
+      error: err.message,
+    });
+  }
+};
+
+// NEW: Delete a terminated employee by ID
+export const deleteTerminatedEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const terminatedEmp = await TerminatedEmployees.findById(id);
+    if (!terminatedEmp) {
+      return res.status(404).json({ message: 'Terminated employee not found' });
+    }
+
+    // Optional: Clean up related Employee data if needed
+    if (terminatedEmp.verificationDetails) {
+      await EmployeeModel.findByIdAndDelete(terminatedEmp.verificationDetails);
+    }
+
+    await TerminatedEmployees.findByIdAndDelete(id);
+
+    res.status(200).json({ message: 'Terminated employee deleted successfully' });
+  } catch (err) {
+    res.status(400).json({
+      message: 'Failed to delete terminated employee',
+      error: err.message,
+    });
+  }
 };

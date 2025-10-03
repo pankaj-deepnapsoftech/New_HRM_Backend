@@ -8,7 +8,10 @@ import {
   removeAssetFromEmployee,
   createEmployeeCredentials, 
   getAllEmployeesWithPagination,
-  getAllEmployees
+  getAllEmployees,
+  terminateEmployee,
+  getAllTerminatedEmployees,
+  deleteTerminatedEmployee
 } from "../controllers/EmpDataController.js";
 import {upload} from "../config/multer.config.js";
 import { Autherization } from "../middleware/Autherization.js";
@@ -37,5 +40,8 @@ router.delete("/:id", Autherization, AdminAuthorization, deleteEmployee);
 router.put("/:id/add-asset", Autherization, AdminAuthorization, addAssetToEmployee);
 router.put("/:id/remove-asset", Autherization, AdminAuthorization, removeAssetFromEmployee);
 router.put("/:id/create-credentials", Autherization, AdminAuthorization, createEmployeeCredentials);
+router.post("/:id/terminate", Autherization, AdminAuthorization, terminateEmployee);
+router.get("/terminated", Autherization, AdminAuthorization, getAllTerminatedEmployees);
+router.delete("/terminated/:id", Autherization, AdminAuthorization, deleteTerminatedEmployee);
 
 export default router;
