@@ -13,12 +13,7 @@ export const Autherization = async (req, res, next) => {
         const token = req.cookies?.ajt || bearer;
 
         if (!token) {
-            return next(
-                new UnauthorizedError(
-                    'User Not Autherized',
-                    'Autherization methord'
-                )
-            );
+            return next(new UnauthorizedError('User Not Autherized', 'Autherization methord'));
         }
 
         const { email } = VerifyToken(token);
@@ -31,9 +26,7 @@ export const Autherization = async (req, res, next) => {
         // If not found, try EmpData (Employee)
         if (!current) {
             const EmpData = (await import('../models/EmpDataModel.js')).default;
-            const emp = await EmpData.findOne({ email }).select(
-                'fname email phoneNumber username role'
-            );
+            const emp = await EmpData.findOne({ email }).select('fname email phoneNumber username role');
             if (emp) {
                 // Normalize to a common shape
                 current = {
@@ -49,12 +42,7 @@ export const Autherization = async (req, res, next) => {
         }
 
         if (!current) {
-            return next(
-                new UnauthorizedError(
-                    'User Not Autherized',
-                    'Autherization methord'
-                )
-            );
+            return next(new UnauthorizedError('User Not Autherized', 'Autherization methord'));
         }
 
         req.CurrentUser = current;

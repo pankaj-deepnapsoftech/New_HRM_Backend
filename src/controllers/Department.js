@@ -1,20 +1,22 @@
-import { DepartmentModel } from '../models/DepartmentModal.js';
-import { AsyncHandler } from '../utils/AsyncHandler.js';
+
+import { DepartmentModel } from "../models/DepartmentModal.js";
+import { AsyncHandler } from "../utils/AsyncHandler.js";
+
 
 export const CreateDepartment = AsyncHandler(async (req, res) => {
     const { department_name, sub_department } = req.body;
+    
 
-    const newDepartment = await DepartmentModel.create({
-        department_name,
-        sub_department,
-    });
+    const newDepartment = await DepartmentModel.create({ department_name, sub_department });
+
 
     res.status(201).json({
         success: true,
-        message: 'Department created successfully',
+        message: "Department created successfully",
         data: newDepartment,
     });
 });
+
 
 export const GetAllDepartments = AsyncHandler(async (req, res) => {
     const departments = await DepartmentModel.find();
@@ -31,9 +33,7 @@ export const GetDepartmentById = AsyncHandler(async (req, res) => {
     const department = await DepartmentModel.findById(id);
 
     if (!department) {
-        return res
-            .status(404)
-            .json({ success: false, message: 'Department not found' });
+        return res.status(404).json({ success: false, message: "Department not found" });
     }
 
     res.status(200).json({
@@ -41,6 +41,7 @@ export const GetDepartmentById = AsyncHandler(async (req, res) => {
         data: department,
     });
 });
+
 
 export const UpdateDepartment = AsyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -53,17 +54,16 @@ export const UpdateDepartment = AsyncHandler(async (req, res) => {
     );
 
     if (!updatedDepartment) {
-        return res
-            .status(404)
-            .json({ success: false, message: 'Department not found' });
+        return res.status(404).json({ success: false, message: "Department not found" });
     }
 
     res.status(200).json({
         success: true,
-        message: 'Department updated successfully',
+        message: "Department updated successfully",
         data: updatedDepartment,
     });
 });
+
 
 export const DeleteDepartment = AsyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -71,13 +71,11 @@ export const DeleteDepartment = AsyncHandler(async (req, res) => {
     const deleted = await DepartmentModel.findByIdAndDelete(id);
 
     if (!deleted) {
-        return res
-            .status(404)
-            .json({ success: false, message: 'Department not found' });
+        return res.status(404).json({ success: false, message: "Department not found" });
     }
 
     res.status(200).json({
         success: true,
-        message: 'Department deleted successfully',
+        message: "Department deleted successfully",
     });
 });

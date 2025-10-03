@@ -4,6 +4,7 @@ import { UserModel } from '../models/UserModel.js';
 import Attendance from '../models/AttendanceModel.js';
 import moment from 'moment';
 
+
 export const addEmployee = async (req, res) => {
     try {
         const {
@@ -125,6 +126,7 @@ export const getAllEmployeesWithPagination = async (req, res) => {
     }
 };
 
+
 export const addAssetToEmployee = async (req, res) => {
     try {
         const empId = req.params.id;
@@ -151,6 +153,7 @@ export const addAssetToEmployee = async (req, res) => {
         });
     }
 };
+
 
 export const removeAssetFromEmployee = async (req, res) => {
     try {
@@ -182,9 +185,9 @@ export const getAssetByEmpId = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const empData = await EmpData.findById(id).select(
-            'fname empCode assets '
-        );
+        const empData = await EmpData.findById(id)
+            .select('fname empCode assets ') 
+           
 
         if (!empData) {
             return res.status(404).json({ message: 'Employee not found' });
@@ -195,6 +198,8 @@ export const getAssetByEmpId = async (req, res) => {
         res.status(500).json({ message: error.message || 'Server error' });
     }
 };
+
+
 
 export const createEmployeeCredentials = async (req, res) => {
     try {
@@ -233,8 +238,7 @@ export const createEmployeeCredentials = async (req, res) => {
 
         // Update EmpData with credentials instead of creating User
         const username = await generateUniqueUsername();
-        const tempPassword =
-            password || Math.random().toString(36).slice(-10) + '#A1';
+        const tempPassword = password || Math.random().toString(36).slice(-10) + '#A1';
 
         // Update EmpData with login credentials
         emp.email = email;
@@ -443,14 +447,19 @@ export const getDailyAttendance = async (req, res) => {
         // Get attendance data from new collection for the specific date
         const attendanceData = await Attendance.find({ date: targetDate }).populate('employeeId', 'fname email');
         
-        // Create attendance map for quick lookup
+        // Create attendance map for quick lookup (use string keys and guard nulls)
         const attendanceMap = {};
         attendanceData.forEach(att => {
-            attendanceMap[att.employeeId._id] = att;
+            // Skip malformed or unpopulated attendance entries
+            if (!att || !att.employeeId) return;
+
+            const empId = att.employeeId._id ? att.employeeId._id.toString() : att.employeeId.toString();
+            attendanceMap[empId] = att;
         });
-        
+
         const attendanceReport = employees.map(emp => {
-            const dayAttendance = attendanceMap[emp._id];
+            const empKey = emp._id ? emp._id.toString() : String(emp._id);
+            const dayAttendance = attendanceMap[empKey];
             
             return {
                 _id: emp._id,
@@ -473,28 +482,5 @@ export const getDailyAttendance = async (req, res) => {
             message: 'Failed to get daily attendance report',
             error: err.message,
         });
-    }
-};
-
-
-
-// Get leave summary for an employee
-export const getEmployeeLeaveSummary = async (req, res) => {
-    try {
-        const { employeeId } = req.params;
-        const emp = await EmpData.findById(employeeId).select('allocatedLeaves usedLeaves remainingLeaves');
-        if (!emp) {
-            return res.status(404).json({ message: 'Employee not found' });
-        }
-        return res.status(200).json({
-            message: 'Leave summary fetched',
-            data: {
-                allocatedLeaves: emp.allocatedLeaves ?? 0,
-                usedLeaves: emp.usedLeaves ?? 0,
-                remainingLeaves: emp.remainingLeaves ?? Math.max(0, (emp.allocatedLeaves ?? 0) - (emp.usedLeaves ?? 0)),
-            },
-        });
-    } catch (err) {
-        return res.status(500).json({ message: 'Failed to fetch leave summary', error: err.message });
     }
 };
