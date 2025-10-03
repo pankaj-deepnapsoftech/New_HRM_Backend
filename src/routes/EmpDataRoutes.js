@@ -9,6 +9,9 @@ import {
   createEmployeeCredentials, 
   getAllEmployeesWithPagination,
   getAllEmployees,
+  terminateEmployee,
+  getAllTerminatedEmployees,
+  deleteTerminatedEmployee,
   getAssetByEmpId,
   markLoginAttendance,
   markLogoutAttendance,
@@ -17,16 +20,28 @@ import {
 import {upload} from "../config/multer.config.js";
 import { Autherization } from "../middleware/Autherization.js";
 import { AdminAuthorization } from "../middleware/AdminAuthorization.js"; 
-
 const router = express.Router();
-router.post("/", Autherization, AdminAuthorization, upload.fields([
-  { name: "addhar" },
-  { name: "pan" },
-  { name: "voterCard" },
-  { name: "driving" },
-  { name: "bankProof" }
-]), addEmployee);
-router.get("/", Autherization, AdminAuthorization, getAllEmployeesWithPagination);
+
+// Termination endpoints
+router.get('/terminated', Autherization, AdminAuthorization, getAllTerminatedEmployees);
+router.delete('/terminated/:id', Autherization, AdminAuthorization, deleteTerminatedEmployee);
+router.post('/:id/terminate', Autherization, AdminAuthorization, terminateEmployee);
+
+// Employee create and paginated list
+router.post(
+  '/',
+  Autherization,
+  AdminAuthorization,
+  upload.fields([
+    { name: 'addhar' },
+    { name: 'pan' },
+    { name: 'voterCard' },
+    { name: 'driving' },
+    { name: 'bankProof' },
+  ]),
+  addEmployee
+);
+router.get('/', Autherization, AdminAuthorization, getAllEmployeesWithPagination);
 router.get('/all', getAllEmployees);
 router.get('/:id', Autherization, getAssetByEmpId)
 router.put("/:id", Autherization, AdminAuthorization, upload.fields([
@@ -37,6 +52,10 @@ router.put("/:id", Autherization, AdminAuthorization, upload.fields([
   { name: "bankProof" }
 ]), updateEmployee);
 router.delete("/:id", Autherization, AdminAuthorization, deleteEmployee);
+
+router.put("/:id/add-asset", Autherization, AdminAuthorization, addAssetToEmployee);
+router.put("/:id/remove-asset", Autherization, AdminAuthorization, removeAssetFromEmployee);
+router.put("/:id/create-credentials", Autherization, AdminAuthorization, createEmployeeCredentials);
 
 router.put("/:id/add-asset", Autherization, AdminAuthorization, addAssetToEmployee);
 router.put("/:id/remove-asset", Autherization, AdminAuthorization, removeAssetFromEmployee);
