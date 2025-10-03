@@ -442,14 +442,17 @@ export const getDailyAttendance = async (req, res) => {
         // Get attendance data from new collection for the specific date
         const attendanceData = await Attendance.find({ date: targetDate }).populate('employeeId', 'fname email');
         
-        // Create attendance map for quick lookup
+        // Create attendance map for quick lookup (use string keys and guard nulls)
         const attendanceMap = {};
         attendanceData.forEach(att => {
-            attendanceMap[att.employeeId._id] = att;
+            if (!att || !att.employeeId) return; // skip if populate failed or reference missing
+            const empId = att.employeeId._id ? att.employeeId._id.toString() : att.employeeId.toString();
+            attendanceMap[empId] = att;
         });
-        
+
         const attendanceReport = employees.map(emp => {
-            const dayAttendance = attendanceMap[emp._id];
+            const empKey = emp._id ? emp._id.toString() : String(emp._id);
+            const dayAttendance = attendanceMap[empKey];
             
             return {
                 _id: emp._id,
