@@ -22,6 +22,10 @@ import { Autherization } from "../middleware/Autherization.js";
 import { AdminAuthorization } from "../middleware/AdminAuthorization.js"; 
 
 const router = express.Router();
+router.get("/terminated", Autherization, AdminAuthorization, getAllTerminatedEmployees);
+router.delete("/terminated/:id", Autherization, AdminAuthorization, deleteTerminatedEmployee);
+router.post("/:id/terminate", Autherization, AdminAuthorization, terminateEmployee);
+
 router.post(
     '/',
     Autherization,
@@ -80,9 +84,7 @@ router.put(
 router.put("/:id/add-asset", Autherization, AdminAuthorization, addAssetToEmployee);
 router.put("/:id/remove-asset", Autherization, AdminAuthorization, removeAssetFromEmployee);
 router.put("/:id/create-credentials", Autherization, AdminAuthorization, createEmployeeCredentials);
-router.post("/:id/terminate", Autherization, AdminAuthorization, terminateEmployee);
-router.get("/terminated", Autherization, AdminAuthorization, getAllTerminatedEmployees);
-router.delete("/terminated/:id", Autherization, AdminAuthorization, deleteTerminatedEmployee);
+
 // Attendance routes
 router.post("/:employeeId/attendance/login", Autherization, markLoginAttendance);
 router.post("/:employeeId/attendance/logout", Autherization, markLogoutAttendance);
