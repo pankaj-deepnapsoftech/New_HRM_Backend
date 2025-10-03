@@ -12,12 +12,10 @@
 
 // const EmpData = mongoose.model("EmpData", empDataSchema);
 // export default EmpData;
-  
- 
 
 // models/EmpData.js
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 
 const Schema = mongoose.Schema;
 
@@ -64,7 +62,7 @@ const ShowCauseNoticeSchema = new Schema({
 const TermsAndConditionsSchema = new Schema({
     submitted: { type: Boolean, default: false },
     submittedAt: { type: Date, default: null },
-    version: { type: String, default: "1.0" },
+    version: { type: String, default: '1.0' },
     ipAddress: String,
     userAgent: String,
     agreementText: String,
@@ -122,7 +120,6 @@ const EmpDataSchema = new Schema(
     { timestamps: true }
 );
 
-
 // Add bcrypt middleware for password hashing
 EmpDataSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
@@ -139,5 +136,4 @@ EmpDataSchema.pre('findOneAndUpdate', async function (next) {
     next();
 });
 
-export default mongoose.model("EmpData", EmpDataSchema);
-
+export default mongoose.model('EmpData', EmpDataSchema);
