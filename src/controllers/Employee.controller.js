@@ -55,8 +55,8 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
         );
     }
 
-    const empData = await EmpData.findById(Emp_id).select("empCode fname ");
-    
+    const empData = await EmpData.findById(Emp_id).select('empCode fname ');
+
     if (!empData) {
         throw new NotFoundError(
             'EmpData not found for provided Emp_id',
@@ -150,7 +150,9 @@ export const DeleteEmployeeDetail = AsyncHandler(async (req, res) => {
         );
     }
 
-    await EmpData.findByIdAndUpdate(deletedEmployee.Emp_id, { verificationDetails: null });
+    await EmpData.findByIdAndUpdate(deletedEmployee.Emp_id, {
+        verificationDetails: null,
+    });
 
     return res.status(StatusCodes.OK).json({
         message: 'Employee deleted successfully',
@@ -168,34 +170,32 @@ export const ListEmployeesWithPagination = AsyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch paginated employees
-const [employees, total] = await Promise.all([
-    EmployeeModel.find()
-        .populate({
-            path: "Emp_id",
-            select: "empCode fname " 
-        })
-      
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 }),
-    EmployeeModel.countDocuments()
-]);
+    const [employees, total] = await Promise.all([
+        EmployeeModel.find()
+            .populate({
+                path: 'Emp_id',
+                select: 'empCode fname ',
+            })
 
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 }),
+        EmployeeModel.countDocuments(),
+    ]);
 
     const totalPages = Math.ceil(total / limit);
 
     return res.status(StatusCodes.OK).json({
-        message: "Employee list retrieved successfully",
+        message: 'Employee list retrieved successfully',
         data: employees,
         pagination: {
             total,
             page,
             totalPages,
-            limit
-        }
+            limit,
+        },
     });
-}); 
-
+});
 
 export const getEmployeeNamesOnly = AsyncHandler(async (req, res) => {
     const employeesList = await EmployeeModel.aggregate([
@@ -265,16 +265,17 @@ export const getEmployeesLocations = AsyncHandler(async (req, res) => {
 export const GetEmployeeDocumentDetailById = AsyncHandler(async (req, res) => {
     const employeeId = req.params.id;
 
-  
     const employee = await EmployeeModel.findById(employeeId)
-        .populate("Emp_id", "fullName email employeeId") 
+        .populate('Emp_id', 'fullName email employeeId')
         .lean();
 
     if (!employee) {
-        throw new NotFoundError("Employee not found", "GetEmployeeDocumentDetailById method");
+        throw new NotFoundError(
+            'Employee not found',
+            'GetEmployeeDocumentDetailById method'
+        );
     }
 
-    
     const result = {
         ...employee,
         fullName: employee.Emp_id?.fullName,
@@ -286,7 +287,7 @@ export const GetEmployeeDocumentDetailById = AsyncHandler(async (req, res) => {
 
     return res.status(StatusCodes.OK).json({
         success: true,
-        message: "Employee detail fetched successfully",
+        message: 'Employee detail fetched successfully',
         data: result,
     });
 });

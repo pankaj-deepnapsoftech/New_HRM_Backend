@@ -12,20 +12,12 @@
 
 // const EmpData = mongoose.model("EmpData", empDataSchema);
 // export default EmpData;
-  
- 
 
 // models/EmpData.js
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 
 const Schema = mongoose.Schema;
-
-const AttendanceSchema = new Schema({
-    date: String,
-    status: String,
-    loginTime: String,
-});
 
 const NoteSchema = new Schema({
     text: String,
@@ -67,6 +59,15 @@ const ShowCauseNoticeSchema = new Schema({
     reviewedAt: Date,
 });
 
+const TermsAndConditionsSchema = new Schema({
+    submitted: { type: Boolean, default: false },
+    submittedAt: { type: Date, default: null },
+    version: { type: String, default: '1.0' },
+    ipAddress: String,
+    userAgent: String,
+    agreementText: String,
+});
+
 const RequestLeaveSchema = new Schema({
     fromDate: String,
     toDate: String,
@@ -100,13 +101,13 @@ const EmpDataSchema = new Schema(
         lastSalaryIncrementDate: { type: Date, default: null },
         advanceEligibilityYears: { type: Number, default: 2 },
         requestLeave: { type: [RequestLeaveSchema], default: [] },
-        attendance: { type: [AttendanceSchema], default: [] },
         advanceRequests: { type: [Schema.Types.Mixed], default: [] },
         notes: { type: [NoteSchema], default: [] },
         incentive: { type: [IncentiveSchema], default: [] },
         reimbursement: { type: [Schema.Types.Mixed], default: [] },
         gatePassRequests: { type: [GatePassRequestSchema], default: [] },
         showCauseNotices: { type: [ShowCauseNoticeSchema], default: [] },
+        termsAndConditions: { type: TermsAndConditionsSchema, default: {} },
         verificationDetails: {
             type: Schema.Types.ObjectId,
             ref: 'Employee',
@@ -118,7 +119,6 @@ const EmpDataSchema = new Schema(
     },
     { timestamps: true }
 );
-
 
 // Add bcrypt middleware for password hashing
 EmpDataSchema.pre('save', async function (next) {
@@ -136,5 +136,4 @@ EmpDataSchema.pre('findOneAndUpdate', async function (next) {
     next();
 });
 
-export default mongoose.model("EmpData", EmpDataSchema);
-
+export default mongoose.model('EmpData', EmpDataSchema);
