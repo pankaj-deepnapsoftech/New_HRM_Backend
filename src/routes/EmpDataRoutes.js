@@ -8,6 +8,7 @@ import {
     createEmployeeCredentials,
     getAllEmployeesWithPagination,
     getAllEmployees,
+    getEmployeeLeaveSummary,
     getAssetByEmpId,
 } from '../controllers/EmpDataController.js';
 import { upload } from '../config/multer.config.js';
@@ -69,5 +70,8 @@ router.put(
     AdminAuthorization,
     createEmployeeCredentials
 );
+
+// Leave summary by employeeId
+router.get('/:employeeId/leave-summary', getEmployeeLeaveSummary);
 
 export default router;
