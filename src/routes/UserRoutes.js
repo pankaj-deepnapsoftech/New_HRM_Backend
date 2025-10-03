@@ -4,7 +4,6 @@ import { UserModel } from '../models/UserModel.js';
 import { Autherization } from '../middleware/Autherization.js';
 import { AdminAuthorization } from '../middleware/AdminAuthorization.js';
 
-
 const router = express.Router();
 
 router.get('/', Autherization, AdminAuthorization, async (req, res) => {

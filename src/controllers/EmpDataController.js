@@ -2,7 +2,6 @@
 import EmpData from '../models/EmpDataModel.js';
 import { UserModel } from '../models/UserModel.js';
 
-
 export const addEmployee = async (req, res) => {
     try {
         const {
@@ -124,7 +123,6 @@ export const getAllEmployeesWithPagination = async (req, res) => {
     }
 };
 
-
 export const addAssetToEmployee = async (req, res) => {
     try {
         const empId = req.params.id;
@@ -151,7 +149,6 @@ export const addAssetToEmployee = async (req, res) => {
         });
     }
 };
-
 
 export const removeAssetFromEmployee = async (req, res) => {
     try {
@@ -183,9 +180,9 @@ export const getAssetByEmpId = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const empData = await EmpData.findById(id)
-            .select('fname empCode assets ') 
-           
+        const empData = await EmpData.findById(id).select(
+            'fname empCode assets '
+        );
 
         if (!empData) {
             return res.status(404).json({ message: 'Employee not found' });
@@ -196,8 +193,6 @@ export const getAssetByEmpId = async (req, res) => {
         res.status(500).json({ message: error.message || 'Server error' });
     }
 };
-
-
 
 export const createEmployeeCredentials = async (req, res) => {
     try {
@@ -236,7 +231,8 @@ export const createEmployeeCredentials = async (req, res) => {
 
         // Update EmpData with credentials instead of creating User
         const username = await generateUniqueUsername();
-        const tempPassword = password || Math.random().toString(36).slice(-10) + '#A1';
+        const tempPassword =
+            password || Math.random().toString(36).slice(-10) + '#A1';
 
         // Update EmpData with login credentials
         emp.email = email;

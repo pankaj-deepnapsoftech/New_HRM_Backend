@@ -6,14 +6,14 @@ export const AdminAuthorization = async (req, res, next) => {
         // Check if user is authenticated (should be done by Autherization middleware first)
         if (!req.CurrentUser) {
             return res.status(StatusCodes.UNAUTHORIZED).json({
-                message: 'User not authenticated'
+                message: 'User not authenticated',
             });
         }
 
         // Check if user has Admin role
         if (req.CurrentUser.role !== 'Admin') {
             return res.status(StatusCodes.FORBIDDEN).json({
-                message: 'Access denied. Admin privileges required.'
+                message: 'Access denied. Admin privileges required.',
             });
         }
 
@@ -21,7 +21,7 @@ export const AdminAuthorization = async (req, res, next) => {
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
             message: 'Authorization error',
-            error: error.message
+            error: error.message,
         });
     }
 };
