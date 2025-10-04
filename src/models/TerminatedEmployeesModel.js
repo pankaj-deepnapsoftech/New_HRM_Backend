@@ -1,40 +1,23 @@
-// // src/models/EmpDataModel.js
-// import mongoose from "mongoose";
-
-// const empDataSchema = new mongoose.Schema({
-//   fname: { type: String, required: true },
-//   department: { type: String, required: true },
-//   designation: { type: String, required: true },
-//   empCode: { type: String, required: true },
-//   salary: { type: Number, required: true },
-//   date: { type: Date, required: true },
-// }, { timestamps: true });
-
-// const EmpData = mongoose.model("EmpData", empDataSchema);
-// export default EmpData;
-  
- 
-
-// models/EmpData.js
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+// src/models/TerminatedEmployeesModel.js
+import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
 
+// Replicate sub-schemas from EmpDataModel.js
+const AttendanceSchema = new Schema({
+    date: String,
+    status: String,
+    loginTime: String,
+});
+
 const NoteSchema = new Schema({
     text: String,
-    timestamp: {
-        type: Date,
-        default: Date.now,
-    },
+    timestamp: { type: Date, default: Date.now },
 });
 
 const IncentiveSchema = new Schema({
     amount: Number,
-    date: {
-        type: Date,
-        default: Date.now,
-    },
+    date: { type: Date, default: Date.now },
     notes: String,
 });
 
@@ -61,15 +44,6 @@ const ShowCauseNoticeSchema = new Schema({
     reviewedAt: Date,
 });
 
-const TermsAndConditionsSchema = new Schema({
-    submitted: { type: Boolean, default: false },
-    submittedAt: { type: Date, default: null },
-    version: { type: String, default: "1.0" },
-    ipAddress: String,
-    userAgent: String,
-    agreementText: String,
-});
-
 const RequestLeaveSchema = new Schema({
     fromDate: String,
     toDate: String,
@@ -78,7 +52,7 @@ const RequestLeaveSchema = new Schema({
     reason: String,
 });
 
-const EmpDataSchema = new Schema(
+const TerminatedEmployeesSchema = new Schema(
     {
         fname: String,
         lastName: { type: String, default: '' },
@@ -99,45 +73,38 @@ const EmpDataSchema = new Schema(
         fullDayLeavesThisMonth: { type: Number, default: 0 },
         halfDayLeavesThisMonth: { type: Number, default: 0 },
         assets: { type: [String], default: [] },
-        Empstatus: { type: String, default: 'active' },
+        Empstatus: { type: String, default: 'Terminated' },
         lastSalaryIncrementDate: { type: Date, default: null },
         advanceEligibilityYears: { type: Number, default: 2 },
         requestLeave: { type: [RequestLeaveSchema], default: [] },
+        attendance: { type: [AttendanceSchema], default: [] },
         advanceRequests: { type: [Schema.Types.Mixed], default: [] },
         notes: { type: [NoteSchema], default: [] },
         incentive: { type: [IncentiveSchema], default: [] },
         reimbursement: { type: [Schema.Types.Mixed], default: [] },
         gatePassRequests: { type: [GatePassRequestSchema], default: [] },
         showCauseNotices: { type: [ShowCauseNoticeSchema], default: [] },
-        termsAndConditions: { type: TermsAndConditionsSchema, default: {} },
         verificationDetails: {
             type: Schema.Types.ObjectId,
             ref: 'Employee',
             default: null,
         },
-        sub_department: {
-            type: String,
+        sub_department: { type: String },
+        role: { type: String, default: 'Employee' },
+        username: { type: String },
+        verification: { type: Boolean, default: true },
+        termsAndConditions: {
+            submitted: { type: Boolean },
+            submittedAt: { type: Date },
+            version: { type: String },
+            ipAddress: { type: String },
+            userAgent: { type: String },
+            agreementText: { type: String },
         },
+        // NEW: Track termination date
+        terminationDate: { type: Date, default: Date.now },
     },
     { timestamps: true }
 );
 
-
-// Add bcrypt middleware for password hashing
-EmpDataSchema.pre('save', async function (next) {
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 10);
-    }
-    next();
-});
-
-EmpDataSchema.pre('findOneAndUpdate', async function (next) {
-    if (!this._update.password) {
-        return next();
-    }
-    this._update.password = await bcrypt.hash(this._update.password, 10);
-    next();
-});
-
-export default mongoose.model("EmpData", EmpDataSchema);
-
+export default mongoose.model('TerminatedEmployees', TerminatedEmployeesSchema);

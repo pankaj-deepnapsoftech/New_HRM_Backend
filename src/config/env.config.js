@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
 class Config {
@@ -26,7 +26,7 @@ class Config {
         this.BACKEND_URL = process.env.BACKEND_URL;
         this.LOCAL_BACKEND_URL = process.env.LOCAL_BACKEND_URL;
         this.LOCAL_FILE_URL = process.env.LOCAL_FILE_URL;
-    }
-}
+    };
+};
 
 export const config = new Config();

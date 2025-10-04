@@ -1,7 +1,13 @@
-import { Schema, model } from 'mongoose';
+import { Schema,model } from "mongoose";
+
 
 const EmployeeShema = new Schema({
     Emp_id: { type: Schema.Types.ObjectId, ref: 'EmpData', required: true },
+    refCollection: {
+        type: String,
+        enum: ['EmpData', 'TerminatedEmployees'],
+        default: 'EmpData',
+    },
     aadhaar: { type: String, required: true },
     pancard: { type: String, required: true },
     photo: { type: String, required: true },
