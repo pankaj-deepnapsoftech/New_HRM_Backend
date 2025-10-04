@@ -12,12 +12,12 @@ export const Autherization = async (req, res, next) => {
             : undefined;
         const token = req.cookies?.ajt || bearer;
 
-        console.log('Auth Debug:', {
-            hasCookie: !!req.cookies?.ajt,
-            hasBearer: !!bearer,
-            cookieToken: req.cookies?.ajt ? 'exists' : 'missing',
-            bearerToken: bearer ? 'exists' : 'missing'
-        });
+        // console.log('Auth Debug:', {
+        //     hasCookie: !!req.cookies?.ajt,
+        //     hasBearer: !!bearer,
+        //     cookieToken: req.cookies?.ajt ? 'exists' : 'missing',
+        //     bearerToken: bearer ? 'exists' : 'missing'
+        // });
 
         if (!token) {
             return next(new UnauthorizedError('User Not Autherized', 'Autherization methord'));

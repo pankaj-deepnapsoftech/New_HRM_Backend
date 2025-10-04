@@ -62,7 +62,7 @@ export const applyLeaveToFinal = async (requestDoc, session = null) => {
 export const requestLeave = async (req, res) => {
     try {
         // eslint-disable-next-line no-undef
-        console.log('ye hai requesy : ', req.body);
+        // console.log('ye hai requesy : ', req.body);
         const { employeeId, from, to, type, mode, description } = req.body;
         const file = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -89,7 +89,7 @@ export const requestLeave = async (req, res) => {
             data: newRequest,
         });
     } catch (err) {
-        // console.log(err);
+        console.log(err);
         return res.status(500).json({ success: false, message: err.message });
     }
 };
@@ -134,7 +134,7 @@ export const updateLeaveStatus = async (req, res) => {
     } catch (err) {
         await session.abortTransaction();
         session.endSession();
-        // console.error("updateLeaveStatus error:", err);
+        console.error("updateLeaveStatus error:", err);
         // console.log
         return res.status(500).json({ success: false, message: err.message });
     }
