@@ -462,6 +462,7 @@ export const getDailyAttendance = async (req, res) => {
                 loginTime: dayAttendance ? dayAttendance.loginTime : '',
                 logoutTime: dayAttendance ? dayAttendance.logoutTime : '',
                 totalWorkingHours: dayAttendance ? dayAttendance.totalWorkingHours : '',
+                loginLocation: dayAttendance ? dayAttendance.loginLocation : 'N/A',
                 date: targetDate
             };
         });

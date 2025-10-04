@@ -100,7 +100,7 @@ export const CreateUser = AsyncHandler(async (req, res) => {
 });
 
 export const LoginUser = AsyncHandler(async (req, res) => {
-    const { username, password, browser, isMobile, loginType } = req.body;
+    const { username, password, browser, isMobile, loginType, location } = req.body;
     const userIp =
         req.headers['x-forwarded-for']?.split(',').shift() ||
         req.socket.remoteAddress;
@@ -179,7 +179,8 @@ export const LoginUser = AsyncHandler(async (req, res) => {
                 date: currentDate,
                 status: 'Present',
                 loginTime: currentTime,
-                logoutTime: ''
+                logoutTime: '',
+                loginLocation: location || 'Unknown'
             });
             exist.lastLoginTime = currentTime;
         }

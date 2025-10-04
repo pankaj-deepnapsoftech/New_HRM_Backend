@@ -24,7 +24,7 @@ export const Autherization = async (req, res, next) => {
         }
 
         const { email } = VerifyToken(token);
-        console.log('Token verified for email:', email);
+        // console.log('Token verified for email:', email);
 
         // First try Users collection (Admin/User)
         let current = await UserModel.findOne({ email }).select(
