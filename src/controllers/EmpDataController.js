@@ -498,6 +498,150 @@ export const getEmployeeLeaveSummary = async (req, res) => {
     }
 };
 
+// Monthly/Yearly Attendance Report
+export const getMonthlyAttendance = async (req, res) => {
+    try {
+        const { month, year, department } = req.query;
+        
+        // Validate month and year
+        if (!month || !year) {
+            return res.status(400).json({ 
+                message: 'Month and year are required parameters' 
+            });
+        }
+
+        // Create date range for the month
+        const startDate = moment(`${year}-${month}-01`).startOf('month');
+        const endDate = moment(`${year}-${month}-01`).endOf('month');
+
+        // Build employee filter
+        let employeeFilter = {};
+        if (department && department !== 'all') {
+            employeeFilter.department = department;
+        }
+
+        // Get all employees with department filter
+        const employees = await EmpData.find(employeeFilter).select('fname email department designation empCode salary location');
+        
+        // Get attendance data for the entire month
+        const attendanceData = await Attendance.find({
+            date: {
+                $gte: startDate.format('YYYY-MM-DD'),
+                $lte: endDate.format('YYYY-MM-DD')
+            }
+        }).populate('employeeId', 'fname email department designation empCode salary location');
+
+        // Create attendance summary for each employee
+        const attendanceReport = employees.map(emp => {
+            const empAttendance = attendanceData.filter(att => 
+                att.employeeId && att.employeeId._id.toString() === emp._id.toString()
+            );
+            
+            const presentDays = empAttendance.filter(att => att.status === 'Present').length;
+            const absentDays = empAttendance.filter(att => att.status === 'Absent').length;
+            const totalDays = endDate.diff(startDate, 'days') + 1;
+            
+            return {
+                _id: emp._id,
+                fname: emp.fname,
+                email: emp.email,
+                department: emp.department,
+                designation: emp.designation,
+                empCode: emp.empCode,
+                salary: emp.salary,
+                location: emp.location,
+                presentDays,
+                absentDays,
+                totalDays,
+                attendancePercentage: totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0
+            };
+        });
+
+        res.status(200).json({
+            message: 'Monthly attendance report retrieved successfully',
+            data: attendanceReport,
+            filters: { month, year, department }
+        });
+    } catch (err) {
+        res.status(400).json({
+            message: 'Failed to get monthly attendance report',
+            error: err.message,
+        });
+    }
+};
+
+// Yearly Attendance Report
+export const getYearlyAttendance = async (req, res) => {
+    try {
+        const { year, department } = req.query;
+        
+        // Validate year
+        if (!year) {
+            return res.status(400).json({ 
+                message: 'Year is required parameter' 
+            });
+        }
+
+        // Create date range for the year
+        const startDate = moment(`${year}-01-01`).startOf('year');
+        const endDate = moment(`${year}-01-01`).endOf('year');
+
+        // Build employee filter
+        let employeeFilter = {};
+        if (department && department !== 'all') {
+            employeeFilter.department = department;
+        }
+
+        // Get all employees with department filter
+        const employees = await EmpData.find(employeeFilter).select('fname email department designation empCode salary location');
+        
+        // Get attendance data for the entire year
+        const attendanceData = await Attendance.find({
+            date: {
+                $gte: startDate.format('YYYY-MM-DD'),
+                $lte: endDate.format('YYYY-MM-DD')
+            }
+        }).populate('employeeId', 'fname email department designation empCode salary location');
+
+        // Create attendance summary for each employee
+        const attendanceReport = employees.map(emp => {
+            const empAttendance = attendanceData.filter(att => 
+                att.employeeId && att.employeeId._id.toString() === emp._id.toString()
+            );
+            
+            const presentDays = empAttendance.filter(att => att.status === 'Present').length;
+            const absentDays = empAttendance.filter(att => att.status === 'Absent').length;
+            const totalDays = endDate.diff(startDate, 'days') + 1;
+            
+            return {
+                _id: emp._id,
+                fname: emp.fname,
+                email: emp.email,
+                department: emp.department,
+                designation: emp.designation,
+                empCode: emp.empCode,
+                salary: emp.salary,
+                location: emp.location,
+                presentDays,
+                absentDays,
+                totalDays,
+                attendancePercentage: totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0
+            };
+        });
+
+        res.status(200).json({
+            message: 'Yearly attendance report retrieved successfully',
+            data: attendanceReport,
+            filters: { year, department }
+        });
+    } catch (err) {
+        res.status(400).json({
+            message: 'Failed to get yearly attendance report',
+            error: err.message,
+        });
+    }
+};
+
 export const markLoginAttendance = async (req, res) => {
     try {
         const { employeeId } = req.params;

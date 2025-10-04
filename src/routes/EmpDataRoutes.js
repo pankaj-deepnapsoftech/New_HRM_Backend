@@ -15,7 +15,9 @@ import {
   getAssetByEmpId,
   markLoginAttendance,
   markLogoutAttendance,
-  getDailyAttendance
+  getDailyAttendance,
+  getMonthlyAttendance,
+  getYearlyAttendance
 } from "../controllers/EmpDataController.js";
 import {upload} from "../config/multer.config.js";
 import { Autherization } from "../middleware/Autherization.js";
@@ -65,5 +67,7 @@ router.put("/:id/create-credentials", Autherization, AdminAuthorization, createE
 router.post("/:employeeId/attendance/login", Autherization, markLoginAttendance);
 router.post("/:employeeId/attendance/logout", Autherization, markLogoutAttendance);
 router.get("/attendance/daily", Autherization, AdminAuthorization, getDailyAttendance);
+router.get("/attendance/monthly", Autherization, AdminAuthorization, getMonthlyAttendance);
+router.get("/attendance/yearly", Autherization, AdminAuthorization, getYearlyAttendance);
 
 export default router;
