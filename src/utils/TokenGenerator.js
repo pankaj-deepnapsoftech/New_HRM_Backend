@@ -6,7 +6,18 @@ export const SignToken = (payload,time) => {
 }
 
 export const VerifyToken = (token) => {
-    return jwt.verify(token,config.JWT_SECRET);
+    try {
+        return jwt.verify(token, config.JWT_SECRET);
+    } catch (error) {
+        console.log('Token verification error:', error.message);
+        if (error.name === 'TokenExpiredError') {
+            throw new Error('Token has expired');
+        } else if (error.name === 'JsonWebTokenError') {
+            throw new Error('Invalid token');
+        } else {
+            throw new Error('Token verification failed');
+        }
+    }
 }
 
 

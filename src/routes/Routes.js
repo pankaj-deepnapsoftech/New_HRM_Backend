@@ -24,6 +24,7 @@ import EmpDataRoutes from "./EmpDataRoutes.js";
 import DepartmentRoutes from "./DepartmentsRoutes.js";
 import LeaveRoutes from './leaveRoutes.js';
 import TermsAndConditionsRoutes from './TermsAndConditions.routes.js';
+import GatepassRoutes from './GatepassRoutes.js';
 
 const router = Router();
 router.use("/user", UserRoutes);
@@ -34,4 +35,5 @@ router.use("/empdata", EmpDataRoutes);
 router.use("/departments",DepartmentRoutes);
 router.use("/leaves",LeaveRoutes);
 router.use("/terms", TermsAndConditionsRoutes);
+router.use("/gatepass", GatepassRoutes);
 export default router;
