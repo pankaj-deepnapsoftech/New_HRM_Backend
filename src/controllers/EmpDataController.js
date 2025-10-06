@@ -478,6 +478,82 @@ export const getDailyAttendance = async (req, res) => {
     }
 };
 
+
+export const getEmployeeMonthlyAttendanceById = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const { month, year } = req.query;
+
+        if (!month || !year) {
+            return res.status(400).json({ message: 'Month and year are required' });
+        }
+
+        const emp = await EmpData.findById(employeeId).select('fname email empCode department');
+        if (!emp) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+
+        const startDate = moment(`${year}-${month}-01`).startOf('month');
+        const endDate = moment(`${year}-${month}-01`).endOf('month');
+
+        // Get attendance of employee for that month
+        const attendanceData = await Attendance.find({
+            employeeId,
+            date: {
+                $gte: startDate.format('YYYY-MM-DD'),
+                $lte: endDate.format('YYYY-MM-DD')
+            }
+        }).sort({ date: 1 });
+
+        // Create a complete list of dates for that month
+        const daysInMonth = endDate.diff(startDate, 'days') + 1;
+        const report = [];
+        for (let i = 0; i < daysInMonth; i++) {
+            const currentDate = moment(startDate).add(i, "days");
+            // 👇 Skip future dates
+            if (currentDate.isAfter(moment(), "day")) break;
+
+            const dateStr = currentDate.format("YYYY-MM-DD");
+            const attendance = attendanceData.find((a) => a.date === dateStr);
+
+            report.push({
+                date: dateStr,
+                status: attendance ? attendance.status : "Absent",
+                loginTime: attendance ? attendance.loginTime : "",
+                logoutTime: attendance ? attendance.logoutTime : "",
+                totalWorkingHours: attendance ? attendance.totalWorkingHours : "",
+            });
+        }
+
+
+        const presentDays = report.filter(r => r.status === 'Present').length;
+        const absentDays = daysInMonth - presentDays;
+
+        res.status(200).json({
+            message: 'Employee monthly attendance fetched successfully',
+            employee: {
+                id: emp._id,
+                name: emp.fname,
+                email: emp.email,
+                empCode: emp.empCode,
+                department: emp.department
+            },
+            month,
+            year,
+            totalDays: daysInMonth,
+            presentDays,
+            absentDays,
+            data: report
+        });
+    } catch (err) {
+        res.status(400).json({
+            message: 'Failed to get employee monthly attendance',
+            error: err.message
+        });
+    }
+};
+
+
 export const getEmployeeLeaveSummary = async (req, res) => {
     try {
         const { employeeId } = req.params;
