@@ -32,6 +32,10 @@ const AttendanceSchema = new Schema({
     notes: {
         type: String,
         default: ''
+    },
+    loginLocation: {
+        type: String,
+        default: 'Unknown'
     }
 }, {
     timestamps: true
