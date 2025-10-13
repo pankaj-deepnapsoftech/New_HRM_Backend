@@ -80,6 +80,7 @@ const RequestLeaveSchema = new Schema({
 
 const EmpDataSchema = new Schema(
     {
+        adminId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
         fname: String,
         lastName: { type: String, default: '' },
         email: { type: String, default: '' },

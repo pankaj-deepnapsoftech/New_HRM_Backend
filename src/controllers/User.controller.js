@@ -54,18 +54,10 @@ export const CreateUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError('Use SuperAdmin signup endpoint', 'CreateUser method');
     }
 
-    const refresh_token = SignToken(
-        { email: data.email, username: data.username },
-        '1day'
-    );
-    const access_token = SignToken(
-        { email: data.email, username: data.username },
-        '1day'
-    );
     const result = await UserModel.create({
         ...data,
         role: userRole,
-        refreshToken: refresh_token,
+        // Do not set refreshToken on register; only on login
         userIp,
     });
     await LoginModel.create({
@@ -76,17 +68,16 @@ export const CreateUser = AsyncHandler(async (req, res) => {
     });
     result.password = null;
 
-    res.cookie('rjt', refresh_token, CookiesOptions(timeUntilMidnight)).cookie(
-        'ajt',
-        access_token,
-        CookiesOptions(timeUntilMidnight + 10 * 60 * 1000)
+    // Generate verification token for email link only (no login cookies)
+    const verification_token = SignToken(
+        { email: data.email, username: data.username },
+        '1day'
     );
-
     SendMail(
         'email-verification.ejs',
         {
             userName: result.username,
-            verificationLink: `${BackendUrl}/user/verify-email?token=${access_token}`,
+            verificationLink: `${BackendUrl}/user/verify-email?token=${verification_token}`,
         },
         { subject: 'Verify Your Email', email: result.email }
     );
@@ -94,8 +85,6 @@ export const CreateUser = AsyncHandler(async (req, res) => {
     return res.status(StatusCodes.CREATED).json({
         message: 'User Register Successful',
         data: result,
-        refresh_token,
-        access_token,
     });
 });
 

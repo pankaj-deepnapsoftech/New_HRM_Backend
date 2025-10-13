@@ -45,7 +45,8 @@ router.post(
   addEmployee
 );
 router.get('/', Autherization, AdminAuthorization, getAllEmployeesWithPagination);
-router.get('/all', getAllEmployees);
+// Secure list-all; scope handled in controller via CurrentUser
+router.get('/all', Autherization, AdminAuthorization, getAllEmployees);
 router.get('/:id', Autherization, getAssetByEmpId)
 router.put("/:id", Autherization, AdminAuthorization, upload.fields([
   { name: "addhar" },

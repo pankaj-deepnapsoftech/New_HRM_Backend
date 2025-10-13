@@ -45,6 +45,7 @@ export const addEmployee = async (req, res) => {
         const empCode = `${deptPrefix}${nextNumber}`;
 
         const newEmp = new EmpData({
+            adminId: req?.CurrentUser?._id,
             fname,
             lastName,
             email,
@@ -86,7 +87,7 @@ export const addEmployee = async (req, res) => {
 
 export const getAllEmployees = async (req, res) => {
     try {
-        const employees = await EmpData.find();
+        const employees = await EmpData.find({ adminId: req?.CurrentUser?._id });
 
         res.status(200).json({
             message: 'All employees fetched successfully',
@@ -108,7 +109,7 @@ export const getAllEmployeesWithPagination = async (req, res) => {
 
         const skip = (page - 1) * limit;
 
-        const employees = await EmpData.find()
+        const employees = await EmpData.find({ adminId: req?.CurrentUser?._id })
             .populate({
                 path: 'verificationDetails',
                 select: 'aadhaar pancard photo Bank_Proof Voter_Id Driving_Licance UAN_number Bank_Account Bank_Name IFSC_Code',
