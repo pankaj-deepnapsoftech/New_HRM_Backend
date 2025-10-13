@@ -205,35 +205,50 @@ export const getGatepassRequestById = async (req, res) => {
   }
 };
 
-// Delete gatepass request (only if pending)
+// Delete gatepass request (allowed if status is 'pending' or 'rejected')
 export const deleteGatepassRequest = async (req, res) => {
   try {
     const { id } = req.params;
-    const employeeId = req.CurrentUser._id; // From auth middleware
+    const currentUser = req.CurrentUser; // From auth middleware
 
-    const gatepassRequest = await GatepassModel.findOne({ _id: id, employeeId });
+    // Fetch the gatepass request by ID
+    const gatepassRequest = await GatepassModel.findById(id).populate("employeeId");
+
     if (!gatepassRequest) {
       return res.status(404).json({
-        message: 'Gatepass request not found or access denied'
+        message: "Gatepass request not found",
       });
     }
 
-    // Only allow deletion if status is pending
-    if (gatepassRequest.status !== 'pending') {
+    // Check if current user is either the employee who created the request OR an admin
+    const isOwner = gatepassRequest.employeeId._id.toString() === currentUser._id.toString();
+    const isAdmin = currentUser.role === "Admin";
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        message: "Access denied. You are not allowed to delete this request.",
+      });
+    }
+
+    // Allow deletion only if status is pending or rejected
+    if (!["pending", "rejected"].includes(gatepassRequest.status)) {
       return res.status(400).json({
-        message: 'Cannot delete processed gatepass requests'
+        message: "Cannot delete approved gatepass requests",
       });
     }
 
+    // Proceed with deletion
     await GatepassModel.findByIdAndDelete(id);
 
-    res.status(200).json({
-      message: 'Gatepass request deleted successfully'
+    return res.status(200).json({
+      message: "Gatepass request deleted successfully",
     });
   } catch (err) {
-    res.status(500).json({
-      message: 'Failed to delete gatepass request',
-      error: err.message
+    return res.status(500).json({
+      message: "Failed to delete gatepass request",
+      error: err.message,
     });
   }
 };
+
+
