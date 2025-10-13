@@ -48,10 +48,10 @@ export const CreateUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError('User Already Exist', 'CreateUser method');
     }
 
-    // Allow only the very first signup. If any user already exists, block further signups.
-    const usersCount = await UserModel.countDocuments();
-    if (usersCount > 0) {
-        throw new BadRequestError('Admin already exist', 'CreateUser method');
+    // Determine user role (do not allow SuperAdmin creation here)
+    let userRole = data.role === 'User' ? 'User' : 'Admin';
+    if (data.role === 'SuperAdmin') {
+        throw new BadRequestError('Use SuperAdmin signup endpoint', 'CreateUser method');
     }
 
     const refresh_token = SignToken(
@@ -64,7 +64,7 @@ export const CreateUser = AsyncHandler(async (req, res) => {
     );
     const result = await UserModel.create({
         ...data,
-        role: 'Admin',
+        role: userRole,
         refreshToken: refresh_token,
         userIp,
     });
@@ -135,11 +135,11 @@ export const LoginUser = AsyncHandler(async (req, res) => {
         }
 
         // Role-based login validation for admin/user
-        if (loginType === 'admin' && exist.role !== 'Admin') {
+        if (loginType === 'admin' && !['Admin', 'SuperAdmin'].includes(exist.role)) {
             throw new BadRequestError('Bad Credintial', 'LoginUser method');
         }
 
-        if (loginType === 'user' && exist.role === 'Admin') {
+        if (loginType === 'user' && ['Admin', 'SuperAdmin'].includes(exist.role)) {
             throw new BadRequestError('Bad Credintial', 'LoginUser method');
         }
     }

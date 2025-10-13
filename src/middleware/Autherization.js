@@ -1,6 +1,7 @@
 /* eslint-disable no-unsafe-optional-chaining */
 import { VerifyToken } from '../utils/TokenGenerator.js';
 import { UserModel } from '../models/UserModel.js';
+import { SuperAdminModel } from '../models/SuperAdmin.model.js';
 import { UnauthorizedError } from '../utils/CustomError.js';
 import { StatusCodes } from 'http-status-codes';
 
@@ -26,10 +27,17 @@ export const Autherization = async (req, res, next) => {
         const { email } = VerifyToken(token);
         // console.log('Token verified for email:', email);
 
-        // First try Users collection (Admin/User)
-        let current = await UserModel.findOne({ email }).select(
-            'fullName email phone username employeeId role'
+        // First try SuperAdmins
+        let current = await SuperAdminModel.findOne({ email }).select(
+            'fullName email phone username role'
         );
+
+        // If not found, try Users collection (Admin/User)
+        if (!current) {
+            current = await UserModel.findOne({ email }).select(
+                'fullName email phone username employeeId role'
+            );
+        }
 
         // If not found, try EmpData (Employee)
         if (!current) {

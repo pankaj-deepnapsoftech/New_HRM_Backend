@@ -25,6 +25,8 @@ import DepartmentRoutes from "./DepartmentsRoutes.js";
 import LeaveRoutes from './leaveRoutes.js';
 import TermsAndConditionsRoutes from './TermsAndConditions.routes.js';
 import GatepassRoutes from './GatepassRoutes.js';
+import SuperAdminRoutes from './SuperAdmin.routes.js';
+import SuperAdminAuthRoutes from './SuperAdminAuth.routes.js';
 
 const router = Router();
 router.use("/user", UserRoutes);
@@ -36,4 +38,6 @@ router.use("/departments",DepartmentRoutes);
 router.use("/leaves",LeaveRoutes);
 router.use("/terms", TermsAndConditionsRoutes);
 router.use("/gatepass", GatepassRoutes);
+router.use("/superadmin", SuperAdminRoutes);
+router.use("/superadmin-auth", SuperAdminAuthRoutes);
 export default router;
