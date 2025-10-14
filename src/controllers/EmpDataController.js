@@ -346,6 +346,7 @@ export const terminateEmployee = async (req, res) => {
       _id: new mongoose.Types.ObjectId(), // Generate new ID
       terminationDate: new Date(), // Set termination date
       Empstatus: 'Terminated', // Ensure status is Terminated
+      adminId: emp.adminId,
     };
     const terminatedEmp = await TerminatedEmployees.create([terminatedEmpData], { session });
 
@@ -382,8 +383,10 @@ export const getAllTerminatedEmployees = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+    const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
 
-    const employees = await TerminatedEmployees.find()
+    const employees = await TerminatedEmployees.find({ adminId })
       .populate({
         path: "verificationDetails",
         select: "aadhaar pancard photo Bank_Proof Voter_Id Driving_Licance UAN_number Bank_Account Bank_Name IFSC_Code"
@@ -392,7 +395,7 @@ export const getAllTerminatedEmployees = async (req, res) => {
       .limit(limit)
       .sort({ terminationDate: -1 }); // Sort by most recent termination
 
-    const total = await TerminatedEmployees.countDocuments();
+    const total = await TerminatedEmployees.countDocuments({ adminId });
 
     res.status(200).json({
       message: 'Paginated terminated employees',

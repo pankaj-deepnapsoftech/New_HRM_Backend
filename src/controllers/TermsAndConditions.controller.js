@@ -67,7 +67,10 @@ export const submitTermsAndConditions = AsyncHandler(async (req, res) => {
 
 // Get terms and conditions status for all employees
 export const getAllTermsStatus = AsyncHandler(async (req, res) => {
-  const employees = await EmpData.find({}, {
+  const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+  const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
+
+  const employees = await EmpData.find({ adminId }, {
     fname: 1,
     lastName: 1,
     email: 1,
