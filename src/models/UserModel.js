@@ -13,6 +13,9 @@ const UserSchema = new Schema({
     verification: { type: Boolean, required: true, default: false },
     allowed_paths: { type: [String] },
     role: { type: String, required: true,enum:["SuperAdmin","Admin","User"] },
+    // Subscription/trial fields
+    isSubscribed: { type: Boolean, required: true, default: false },
+    trialEndsAt: { type: Date },
 }, { timestamps: true });
 
 UserSchema.pre('save', async function (next) {

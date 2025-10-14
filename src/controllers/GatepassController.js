@@ -55,6 +55,8 @@ export const createGatepassRequest = async (req, res) => {
 export const getAllGatepassRequests = async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
+    const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+    const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
     const skip = (page - 1) * limit;
 
     // Build filter
@@ -62,6 +64,11 @@ export const getAllGatepassRequests = async (req, res) => {
     if (status && status !== 'all') {
       filter.status = status;
     }
+
+    // Find employees under selected admin to constrain gatepasses
+    const employees = await EmpData.find({ adminId }).select('_id');
+    const employeeIds = employees.map(e => e._id);
+    filter.employeeId = { $in: employeeIds };
 
     // Get gatepass requests with pagination
     const gatepassRequests = await GatepassModel.find(filter)

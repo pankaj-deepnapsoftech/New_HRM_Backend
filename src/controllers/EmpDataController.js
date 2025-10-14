@@ -87,7 +87,9 @@ export const addEmployee = async (req, res) => {
 
 export const getAllEmployees = async (req, res) => {
     try {
-        const employees = await EmpData.find({ adminId: req?.CurrentUser?._id });
+        const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
+        const employees = await EmpData.find({ adminId });
 
         res.status(200).json({
             message: 'All employees fetched successfully',
@@ -109,7 +111,9 @@ export const getAllEmployeesWithPagination = async (req, res) => {
 
         const skip = (page - 1) * limit;
 
-        const employees = await EmpData.find({ adminId: req?.CurrentUser?._id })
+        const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
+        const employees = await EmpData.find({ adminId })
             .populate({
                 path: 'verificationDetails',
                 select: 'aadhaar pancard photo Bank_Proof Voter_Id Driving_Licance UAN_number Bank_Account Bank_Name IFSC_Code',
@@ -436,9 +440,11 @@ export const getDailyAttendance = async (req, res) => {
     try {
         const { date } = req.query;
         const targetDate = date || moment().format('YYYY-MM-DD');
+        const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
         
-        // Get all employees
-        const employees = await EmpData.find({}).select('fname email lastLoginTime logoutTime');
+        // Get employees under selected admin
+        const employees = await EmpData.find({ adminId }).select('fname email lastLoginTime logoutTime');
         
         // Get attendance data from new collection for the specific date
         const attendanceData = await Attendance.find({ date: targetDate }).populate('employeeId', 'fname email');
@@ -580,6 +586,8 @@ export const getEmployeeLeaveSummary = async (req, res) => {
 export const getMonthlyAttendance = async (req, res) => {
     try {
         const { month, year, department } = req.query;
+        const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
         
         // Validate month and year
         if (!month || !year) {
@@ -593,7 +601,7 @@ export const getMonthlyAttendance = async (req, res) => {
         const endDate = moment(`${year}-${month}-01`).endOf('month');
 
         // Build employee filter
-        let employeeFilter = {};
+        let employeeFilter = { adminId };
         if (department && department !== 'all') {
             employeeFilter.department = department;
         }
@@ -652,6 +660,8 @@ export const getMonthlyAttendance = async (req, res) => {
 export const getYearlyAttendance = async (req, res) => {
     try {
         const { year, department } = req.query;
+        const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
         
         // Validate year
         if (!year) {
@@ -665,7 +675,7 @@ export const getYearlyAttendance = async (req, res) => {
         const endDate = moment(`${year}-01-01`).endOf('year');
 
         // Build employee filter
-        let employeeFilter = {};
+        let employeeFilter = { adminId };
         if (department && department !== 'all') {
             employeeFilter.department = department;
         }

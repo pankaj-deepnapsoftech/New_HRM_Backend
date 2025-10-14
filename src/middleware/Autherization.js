@@ -35,7 +35,7 @@ export const Autherization = async (req, res, next) => {
         // If not found, try Users collection (Admin/User)
         if (!current) {
             current = await UserModel.findOne({ email }).select(
-                'fullName email phone username employeeId role'
+                'fullName email phone username employeeId role isSubscribed trialEndsAt'
             );
         }
 

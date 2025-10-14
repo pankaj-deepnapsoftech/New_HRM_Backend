@@ -8,8 +8,13 @@ export const getAllAdminsWithStats = AsyncHandler(async (req, res) => {
     try {
         // Get all admins
         const admins = await UserModel.find({ role: 'Admin' })
-            .select('fullName email phone username employeeId createdAt')
+            .select('fullName email phone username employeeId createdAt isSubscribed trialEndsAt verification')
             .lean();
+
+        const now = new Date();
+        let subscribedCount = 0;
+        let trialCount = 0;
+        let inactiveCount = 0;
 
         // Get employee statistics for each admin
         const adminsWithStats = await Promise.all(
@@ -20,8 +25,27 @@ export const getAllAdminsWithStats = AsyncHandler(async (req, res) => {
                 const activeEmployees = await EmpData.countDocuments({ Empstatus: 'active' });
                 const inactiveEmployees = await EmpData.countDocuments({ Empstatus: 'inactive' });
 
+                // derive subscription status for admin
+                const isSubscribed = !!admin.isSubscribed;
+                const trialEndsAt = admin.trialEndsAt ? new Date(admin.trialEndsAt) : null;
+                const onTrial = !isSubscribed && trialEndsAt && now <= trialEndsAt;
+                const trialExpired = !isSubscribed && trialEndsAt && now > trialEndsAt;
+                const isInactive = (!isSubscribed && trialExpired) || admin.verification === false;
+
+                if (isSubscribed) subscribedCount += 1;
+                if (onTrial) trialCount += 1;
+                if (isInactive) inactiveCount += 1;
+
                 return {
                     ...admin,
+                    subscription: {
+                        isSubscribed,
+                        trialEndsAt: admin.trialEndsAt || null,
+                        onTrial,
+                        trialExpired: !!trialExpired,
+                        verification: admin.verification,
+                        status: isSubscribed ? 'subscribed' : onTrial ? 'trial' : (isInactive ? 'inactive' : 'expired'),
+                    },
                     employeeStats: {
                         total: totalEmployees,
                         active: activeEmployees,
@@ -37,6 +61,9 @@ export const getAllAdminsWithStats = AsyncHandler(async (req, res) => {
             data: {
                 admins: adminsWithStats,
                 totalAdmins: admins.length,
+                subscribedAdmins: subscribedCount,
+                trialAdmins: trialCount,
+                inactiveAdmins: inactiveCount,
                 totalEmployees: await EmpData.countDocuments({}),
                 activeEmployees: await EmpData.countDocuments({ Empstatus: 'active' }),
                 inactiveEmployees: await EmpData.countDocuments({ Empstatus: 'inactive' })

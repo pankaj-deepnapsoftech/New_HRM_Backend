@@ -1,11 +1,12 @@
 import express from 'express';
 import { createOrder, verifyPayment } from '../controllers/Payments.controller.js';
+import { Autherization } from '../middleware/Autherization.js';
 
 const router = express.Router();
 
-// Public: allow creating order without login (userId stays null)
-router.post('/create-order', createOrder);
-router.post('/verify', verifyPayment);
+// Require auth so we can store userId on order and update subscription on verify
+router.post('/create-order', Autherization, createOrder);
+router.post('/verify', Autherization, verifyPayment);
 
 export default router;
 

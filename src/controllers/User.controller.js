@@ -54,11 +54,15 @@ export const CreateUser = AsyncHandler(async (req, res) => {
         throw new BadRequestError('Use SuperAdmin signup endpoint', 'CreateUser method');
     }
 
+    const trialEndsAt = moment().add(3, 'days').toDate();
     const result = await UserModel.create({
         ...data,
         role: userRole,
         // Do not set refreshToken on register; only on login
         userIp,
+        // start free trial for first-time signup
+        isSubscribed: false,
+        trialEndsAt,
     });
     await LoginModel.create({
         userId: result._id,

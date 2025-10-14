@@ -7,7 +7,7 @@ export const CreateDepartment = AsyncHandler(async (req, res) => {
     const { department_name, sub_department } = req.body;
     
 
-    const newDepartment = await DepartmentModel.create({ department_name, sub_department });
+    const newDepartment = await DepartmentModel.create({ department_name, sub_department, adminId: req?.CurrentUser?._id });
 
 
     res.status(201).json({
@@ -19,7 +19,9 @@ export const CreateDepartment = AsyncHandler(async (req, res) => {
 
 
 export const GetAllDepartments = AsyncHandler(async (req, res) => {
-    const departments = await DepartmentModel.find();
+    const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+    const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
+    const departments = await DepartmentModel.find({ adminId });
 
     res.status(200).json({
         success: true,

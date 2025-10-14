@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { config } from '../config/env.config.js';
 import { SubscriptionOrder } from '../models/SubscriptionOrder.model.js';
 import { SubscriptionPayment } from '../models/SubscriptionPayment.model.js';
+import { UserModel } from '../models/UserModel.js';
 import { AsyncHandler } from '../utils/AsyncHandler.js';
 
 const RZP_KEY_ID = process.env.RAZORPAY_KEY_ID || config.RAZORPAY_KEY_ID;
@@ -101,6 +102,13 @@ export const verifyPayment = AsyncHandler(async (req, res) => {
         razorpaySignature: razorpay_signature,
         status: 'paid',
     });
+
+    // Mark user as subscribed (if user was logged in during order creation)
+    if (order?.userId) {
+        await UserModel.findByIdAndUpdate(order.userId, {
+            isSubscribed: true,
+        });
+    }
 
     return res.status(StatusCodes.OK).json({ success: true, message: 'Payment verified' });
 });
