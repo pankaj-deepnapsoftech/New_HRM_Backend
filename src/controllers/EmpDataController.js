@@ -733,7 +733,7 @@ export const getYearlyAttendance = async (req, res) => {
     }
 };
 
-export const markLoginAttendance = async (req, res) => {
+export const checkInAttendance = async (req, res) => {
     try {
         const { employeeId } = req.params;
         const currentDate = moment().format('YYYY-MM-DD');
@@ -744,22 +744,32 @@ export const markLoginAttendance = async (req, res) => {
             return res.status(404).json({ message: 'Employee not found' });
         }
 
-        // Check if attendance already exists for today in new collection
+        // Check if attendance already exists for today
         let todayAttendance = await Attendance.findOne({
             employeeId: employeeId,
             date: currentDate
         });
 
         if (todayAttendance) {
-            // If attendance already exists for today, don't change login time
-            // Only update status if needed and lastLoginTime in EmpData
+            if (todayAttendance.loginTime) {
+                return res.status(400).json({ 
+                    message: 'Already checked in today',
+                    data: {
+                        employeeId: emp._id,
+                        name: emp.fname,
+                        date: currentDate,
+                        loginTime: todayAttendance.loginTime,
+                        status: todayAttendance.status
+                    }
+                });
+            } else {
+                // Update existing record with check-in time
+                todayAttendance.loginTime = currentTime;
             todayAttendance.status = 'Present';
-            emp.lastLoginTime = currentTime;
             await todayAttendance.save();
-            await emp.save();
-            // Keep the original loginTime - don't update it
+            }
         } else {
-            // Create new attendance record only if it's first login of the day
+            // Create new attendance record
             todayAttendance = await Attendance.create({
                 employeeId: employeeId,
                 date: currentDate,
@@ -767,12 +777,14 @@ export const markLoginAttendance = async (req, res) => {
                 loginTime: currentTime,
                 logoutTime: ''
             });
-            emp.lastLoginTime = currentTime;
-            await emp.save();
         }
 
+        // Update employee's last login time
+            emp.lastLoginTime = currentTime;
+            await emp.save();
+
         res.status(200).json({
-            message: 'Login attendance marked successfully',
+            message: 'Check-in successful',
             data: {
                 employeeId: emp._id,
                 name: emp.fname,
@@ -784,13 +796,13 @@ export const markLoginAttendance = async (req, res) => {
         });
     } catch (err) {
         res.status(400).json({
-            message: 'Failed to mark login attendance',
+            message: 'Failed to check-in',
             error: err.message,
         });
     }
 };
 
-export const markLogoutAttendance = async (req, res) => {
+export const checkOutAttendance = async (req, res) => {
     try {
         const { employeeId } = req.params;
         const currentDate = moment().format('YYYY-MM-DD');
@@ -801,53 +813,74 @@ export const markLogoutAttendance = async (req, res) => {
             return res.status(404).json({ message: 'Employee not found' });
         }
 
-        // Find today's attendance record in new collection
+        // Find today's attendance record
         const todayAttendance = await Attendance.findOne({
             employeeId: employeeId,
             date: currentDate
         });
 
-        if (todayAttendance && todayAttendance.loginTime) {
+        if (!todayAttendance) {
+            return res.status(400).json({ 
+                message: 'No check-in found for today. Please check-in first.' 
+            });
+        }
+
+        if (!todayAttendance.loginTime) {
+            return res.status(400).json({ 
+                message: 'No check-in time found. Please check-in first.' 
+            });
+        }
+
+        if (todayAttendance.logoutTime) {
+            return res.status(400).json({ 
+                message: 'Already checked out today',
+                data: {
+                    employeeId: emp._id,
+                    name: emp.fname,
+                    date: currentDate,
+                    loginTime: todayAttendance.loginTime,
+                    logoutTime: todayAttendance.logoutTime,
+                    totalWorkingHours: todayAttendance.totalWorkingHours
+                }
+            });
+        }
+
             // Update logout time
             todayAttendance.logoutTime = currentTime;
-            emp.logoutTime = currentTime;
             
             // Calculate working hours
-            if (todayAttendance.loginTime && todayAttendance.logoutTime) {
                 const loginMoment = moment(`${currentDate} ${todayAttendance.loginTime}`, 'YYYY-MM-DD HH:mm:ss');
                 const logoutMoment = moment(`${currentDate} ${todayAttendance.logoutTime}`, 'YYYY-MM-DD HH:mm:ss');
                 const workingHours = logoutMoment.diff(loginMoment, 'hours', true);
                 todayAttendance.totalWorkingHours = workingHours.toFixed(2) + ' hours';
-            }
             
             await todayAttendance.save();
+
+        // Update employee's logout time
+        emp.logoutTime = currentTime;
             await emp.save();
 
             res.status(200).json({
-                message: 'Logout attendance marked successfully',
+            message: 'Check-out successful',
                 data: {
                     employeeId: emp._id,
                     name: emp.fname,
                     email: emp.email,
                     date: currentDate,
                     loginTime: todayAttendance.loginTime,
-                    logoutTime: currentTime,
-                    status: todayAttendance.status,
-                    totalWorkingHours: todayAttendance.totalWorkingHours
-                }
-            });
-        } else {
-            res.status(400).json({
-                message: 'No login attendance found for today. Please login first.',
-            });
-        }
+                logoutTime: todayAttendance.logoutTime,
+                totalWorkingHours: todayAttendance.totalWorkingHours,
+                status: 'Present'
+            }
+        });
     } catch (err) {
         res.status(400).json({
-            message: 'Failed to mark logout attendance',
+            message: 'Failed to check-out',
             error: err.message,
         });
     }
 };
+
 
 // Get daily attendance report
 // export const getDailyAttendance = async (req, res) => {
