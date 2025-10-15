@@ -13,8 +13,8 @@ import {
   getAllTerminatedEmployees,
   deleteTerminatedEmployee,
   getAssetByEmpId,
-  markLoginAttendance,
-  markLogoutAttendance,
+  checkInAttendance,
+  checkOutAttendance,
   getDailyAttendance,
   getMonthlyAttendance,
   getYearlyAttendance,
@@ -66,8 +66,8 @@ router.put("/:id/remove-asset", Autherization, AdminAuthorization, removeAssetFr
 router.put("/:id/create-credentials", Autherization, AdminAuthorization, createEmployeeCredentials);
 
 // Attendance routes
-router.post("/:employeeId/attendance/login", Autherization, markLoginAttendance);
-router.post("/:employeeId/attendance/logout", Autherization, markLogoutAttendance);
+router.post("/:employeeId/attendance/checkin", Autherization, checkInAttendance);
+router.post("/:employeeId/attendance/checkout", Autherization, checkOutAttendance);
 router.get("/attendance/daily", Autherization, AdminAuthorization, getDailyAttendance);
 router.get("/attendance/monthly", Autherization, AdminAuthorization, getMonthlyAttendance);
 router.get("/attendance/yearly", Autherization, AdminAuthorization, getYearlyAttendance);

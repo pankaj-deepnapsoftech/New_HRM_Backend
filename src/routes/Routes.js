@@ -28,6 +28,8 @@ import GatepassRoutes from './GatepassRoutes.js';
 import SuperAdminRoutes from './SuperAdmin.routes.js';
 import SuperAdminAuthRoutes from './SuperAdminAuth.routes.js';
 import PaymentsRoutes from './Payments.routes.js';
+import AttendanceRegularizationRoutes from './AttendanceRegularizationRoutes.js';
+import OtpRoutes from './Otp.routes.js';
 
 const router = Router();
 router.use("/user", UserRoutes);
@@ -40,6 +42,8 @@ router.use("/leaves",LeaveRoutes);
 router.use("/terms", TermsAndConditionsRoutes);
 router.use("/gatepass", GatepassRoutes);
 router.use("/superadmin", SuperAdminRoutes);
+router.use("/otp", OtpRoutes);
 router.use("/superadmin-auth", SuperAdminAuthRoutes);
 router.use("/payments", PaymentsRoutes);
+router.use("/attendance-regularization", AttendanceRegularizationRoutes);
 export default router;
