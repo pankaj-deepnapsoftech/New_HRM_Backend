@@ -45,6 +45,18 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
     const Driving_Licance =
         files?.Driving_Licance &&
         `${FileUrl}/${files.Driving_Licance[0].filename}`;
+    const education_proof =
+        files?.education_proof &&
+        `${FileUrl}/${files.education_proof[0].filename}`;
+    const experience_letter =
+        files?.experience_letter &&
+        `${FileUrl}/${files.experience_letter[0].filename}`;
+    const previous_salary_slips =
+        files?.previous_salary_slips &&
+        `${FileUrl}/${files.previous_salary_slips[0].filename}`;
+    const resignation_acceptance =
+        files?.resignation_acceptance &&
+        `${FileUrl}/${files.resignation_acceptance[0].filename}`;
 
     const Emp_id = body?._id;
 
@@ -73,6 +85,10 @@ export const CreateEmployeeDetail = AsyncHandler(async (req, res) => {
         Bank_Proof,
         Voter_Id,
         Driving_Licance,
+        education_proof,
+        experience_letter,
+        previous_salary_slips,
+        resignation_acceptance,
         Emp_id,
     });
 
@@ -123,6 +139,22 @@ export const UpdateEmployeeDetail = AsyncHandler(async (req, res) => {
 
     if (files?.Driving_Licance) {
         updates.Driving_Licance = `${FileUrl}/${files.Driving_Licance[0].filename}`;
+    }
+
+    if (files?.education_proof) {
+        updates.education_proof = `${FileUrl}/${files.education_proof[0].filename}`;
+    }
+
+    if (files?.experience_letter) {
+        updates.experience_letter = `${FileUrl}/${files.experience_letter[0].filename}`;
+    }
+
+    if (files?.previous_salary_slips) {
+        updates.previous_salary_slips = `${FileUrl}/${files.previous_salary_slips[0].filename}`;
+    }
+
+    if (files?.resignation_acceptance) {
+        updates.resignation_acceptance = `${FileUrl}/${files.resignation_acceptance[0].filename}`;
     }
 
     // Update the employee data

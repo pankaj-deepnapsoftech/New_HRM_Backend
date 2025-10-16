@@ -7,6 +7,7 @@ import {
 import {
     ChangePassword,
     CreateUser,
+    DebugAuth,
     ForgetPassword,
     LogedInUser,
     LoginUser,
@@ -21,6 +22,7 @@ const router = Router();
 
 router.route('/register').post(Validater(AuthValidation), CreateUser);
 router.route('/login').post(Validater(LoginValidation), LoginUser);
+router.route('/debug-auth').get(DebugAuth);
 router.route('/loged-in-user').get(Autherization, LogedInUser);
 router.route('/logout').post(Autherization, LogoutUser);
 router.route('/verify-email').get(VerifyEmail);

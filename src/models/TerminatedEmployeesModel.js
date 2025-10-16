@@ -54,7 +54,7 @@ const RequestLeaveSchema = new Schema({
 
 const TerminatedEmployeesSchema = new Schema(
     {
-        adminId: { type: Schema.Types.ObjectId, ref: 'Users', index: true },
+        adminId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
         fname: String,
         lastName: { type: String, default: '' },
         email: { type: String, default: '' },

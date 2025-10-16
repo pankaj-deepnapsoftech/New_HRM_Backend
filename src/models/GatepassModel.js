@@ -38,7 +38,7 @@ const gatepassSchema = new mongoose.Schema({
   },
   approvedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Users',
+    ref: 'User',
     default: null
   },
   approvedAt: {

@@ -18,6 +18,10 @@ const EmployeeShema = new Schema({
     Back_Name: { type: String, required: true },
     IFSC_Code: { type: String, required: true },
     Bank_Proof: { type: String, required: true },
+    education_proof: { type: String },
+    experience_letter: { type: String },
+    previous_salary_slips: { type: String },
+    resignation_acceptance: { type: String },
 });
 
 export const EmployeeModel = model('Employee', EmployeeShema);

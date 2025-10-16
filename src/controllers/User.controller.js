@@ -149,35 +149,6 @@ export const LoginUser = AsyncHandler(async (req, res) => {
     let result;
     if (isEmployee) {
         // For employee login - update EmpData (no verification check needed)
-        const currentDate = moment().format('YYYY-MM-DD');
-        const currentTime = moment().format('HH:mm:ss');
-        
-        // Mark attendance for employee login (first login of the day only)
-        let todayAttendance = await Attendance.findOne({
-            employeeId: exist._id,
-            date: currentDate
-        });
-
-        if (todayAttendance) {
-            // If attendance already exists for today, don't change login time
-            // Only update status if needed and lastLoginTime
-            todayAttendance.status = 'Present';
-            exist.lastLoginTime = currentTime;
-            await todayAttendance.save();
-            // Keep the original loginTime - don't update it
-        } else {
-            // Create new attendance record only if it's first login of the day
-            todayAttendance = await Attendance.create({
-                employeeId: exist._id,
-                date: currentDate,
-                status: 'Present',
-                loginTime: currentTime,
-                logoutTime: '',
-                loginLocation: location || 'Unknown'
-            });
-            exist.lastLoginTime = currentTime;
-        }
-
         // Update employee data and save
         exist.refreshToken = refresh_token;
         await exist.save();
@@ -238,6 +209,26 @@ export const LogedInUser = AsyncHandler(async (req, res) => {
         data: req?.CurrentUser,
     });
 });
+
+// Debug endpoint to check authentication status
+export const DebugAuth = AsyncHandler(async (req, res) => {
+    const bearer = req.headers?.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.split(' ')[1]
+        : undefined;
+    const token = req.cookies?.ajt || bearer;
+    
+    return res.status(StatusCodes.OK).json({
+        message: 'Debug Auth Info',
+        debug: {
+            hasCookie: !!req.cookies?.ajt,
+            hasBearer: !!bearer,
+            cookieToken: req.cookies?.ajt ? 'exists' : 'missing',
+            bearerToken: bearer ? 'exists' : 'missing',
+            allCookies: req.cookies,
+            currentUser: req?.CurrentUser || 'Not set'
+        }
+    });
+});
 export const LogoutUser = AsyncHandler(async (req, res) => {
     const { isMobile, browser } = req.body;
     const userIp =
@@ -249,35 +240,6 @@ export const LogoutUser = AsyncHandler(async (req, res) => {
         throw new NotFoundError('something Went wrong', 'LogoutUser method');
     }
 
-    // Check if user is an employee and mark logout attendance
-    const empData = await EmpDataModel.findById(userIdToLog);
-    if (empData) {
-        const currentDate = moment().format('YYYY-MM-DD');
-        const currentTime = moment().format('HH:mm:ss');
-        
-        // Find today's attendance record in new collection
-        const todayAttendance = await Attendance.findOne({
-            employeeId: userIdToLog,
-            date: currentDate
-        });
-
-        if (todayAttendance && todayAttendance.loginTime) {
-            // Update logout time
-            todayAttendance.logoutTime = currentTime;
-            empData.logoutTime = currentTime;
-            
-            // Calculate working hours
-            if (todayAttendance.loginTime && todayAttendance.logoutTime) {
-                const loginMoment = moment(`${currentDate} ${todayAttendance.loginTime}`, 'YYYY-MM-DD HH:mm:ss');
-                const logoutMoment = moment(`${currentDate} ${todayAttendance.logoutTime}`, 'YYYY-MM-DD HH:mm:ss');
-                const workingHours = logoutMoment.diff(loginMoment, 'hours', true);
-                todayAttendance.totalWorkingHours = workingHours.toFixed(2) + ' hours';
-            }
-            
-            await todayAttendance.save();
-            await empData.save();
-        }
-    }
 
     await LoginModel.create({ userId: userIdToLog, isMobile, browser, userIp });
     res.clearCookie('rjt')
