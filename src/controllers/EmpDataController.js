@@ -931,3 +931,43 @@ export const checkOutAttendance = async (req, res) => {
 //         });
 //     }
 // };
+
+// Get employees with birthdays today
+export const getTodayBirthdays = async (req, res) => {
+    try {
+        const adminId = req.CurrentUser._id;
+        const today = new Date();
+        const todayMonth = today.getMonth() + 1; // JavaScript months are 0-indexed
+        const todayDay = today.getDate();
+
+        // Find employees whose birthday is today
+        const employeesWithBirthdays = await EmpData.find({
+            adminId: adminId,
+            dob: { $exists: true, $ne: '' },
+            Empstatus: 'active'
+        }).select('fname lastName empCode department designation avatar dob');
+
+        // Filter employees whose birthday matches today's month and day
+        const todaysBirthdays = employeesWithBirthdays.filter(emp => {
+            if (!emp.dob) return false;
+            
+            const dobDate = new Date(emp.dob);
+            const dobMonth = dobDate.getMonth() + 1;
+            const dobDay = dobDate.getDate();
+            
+            return dobMonth === todayMonth && dobDay === todayDay;
+        });
+
+        res.status(200).json({
+            success: true,
+            data: todaysBirthdays,
+            count: todaysBirthdays.length
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch today\'s birthdays',
+            error: error.message
+        });
+    }
+};

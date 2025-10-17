@@ -18,7 +18,8 @@ import {
   getDailyAttendance,
   getMonthlyAttendance,
   getYearlyAttendance,
-  getEmployeeMonthlyAttendanceById
+  getEmployeeMonthlyAttendanceById,
+  getTodayBirthdays
 } from "../controllers/EmpDataController.js";
 import {upload} from "../config/multer.config.js";
 import { Autherization } from "../middleware/Autherization.js";
@@ -72,5 +73,6 @@ router.get("/attendance/daily", Autherization, AdminAuthorization, getDailyAtten
 router.get("/attendance/monthly", Autherization, AdminAuthorization, getMonthlyAttendance);
 router.get("/attendance/yearly", Autherization, AdminAuthorization, getYearlyAttendance);
 router.get('/attendance/employee/:employeeId/monthly', getEmployeeMonthlyAttendanceById);
+router.get('/birthdays/today', Autherization, AdminAuthorization, getTodayBirthdays);
 
 export default router;
