@@ -7,24 +7,27 @@ import { SubscriptionPayment } from '../models/SubscriptionPayment.model.js';
 import { UserModel } from '../models/UserModel.js';
 import { AsyncHandler } from '../utils/AsyncHandler.js';
 
-const RZP_KEY_ID = process.env.RAZORPAY_KEY_ID || config.RAZORPAY_KEY_ID;
-const RZP_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || config.RAZORPAY_KEY_SECRET;
-const razorpay = new Razorpay({
-    key_id: RZP_KEY_ID,
-    key_secret: RZP_KEY_SECRET,
-});
-
-export const createOrder = AsyncHandler(async (req, res) => {
-    if (!RZP_KEY_ID || !RZP_KEY_SECRET) {
+const getRazorpayClient = () => {
+    const keyId = process.env.RAZORPAY_KEY_ID || config.RAZORPAY_KEY_ID;
+    const keySecret =
+        process.env.RAZORPAY_KEY_SECRET || config.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
         throw new Error('Razorpay keys missing in environment (.env)');
     }
+    return new Razorpay({ key_id: keyId, key_secret: keySecret });
+};
+
+export const createOrder = AsyncHandler(async (req, res) => {
+    const razorpay = getRazorpayClient();
     const userId = req?.CurrentUser?._id; // optional; can be null
     const { plan } = req.body;
     // Try to pull amount from a Razorpay Plan if configured
     let amountInPaise = 1000 * 100; // default 1000 INR yearly
     let planInfo = null;
     try {
-        const envPlanId = process.env.RAZORPAY_PLAN_ID_PREMIUM || config.RAZORPAY_PLAN_ID_PREMIUM;
+        const envPlanId =
+            process.env.RAZORPAY_PLAN_ID_PREMIUM ||
+            config.RAZORPAY_PLAN_ID_PREMIUM;
         if (envPlanId) {
             const fetchedPlan = await razorpay.plans.fetch(envPlanId);
             // fetchedPlan.amount is in paise
@@ -71,22 +74,29 @@ export const createOrder = AsyncHandler(async (req, res) => {
 });
 
 export const verifyPayment = AsyncHandler(async (req, res) => {
-    if (!RZP_KEY_SECRET) {
+    const keySecret =
+        process.env.RAZORPAY_KEY_SECRET || config.RAZORPAY_KEY_SECRET;
+    if (!keySecret) {
         throw new Error('Razorpay secret missing in environment (.env)');
     }
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
+        req.body;
 
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expected = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || config.RAZORPAY_KEY_SECRET)
+        .createHmac('sha256', keySecret)
         .update(body)
         .digest('hex');
 
     if (expected !== razorpay_signature) {
-        return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: 'Signature mismatch' });
+        return res
+            .status(StatusCodes.BAD_REQUEST)
+            .json({ success: false, message: 'Signature mismatch' });
     }
 
-    const order = await SubscriptionOrder.findOne({ razorpayOrderId: razorpay_order_id });
+    const order = await SubscriptionOrder.findOne({
+        razorpayOrderId: razorpay_order_id,
+    });
     if (order) {
         order.status = 'paid';
         await order.save();
@@ -110,7 +120,7 @@ export const verifyPayment = AsyncHandler(async (req, res) => {
         });
     }
 
-    return res.status(StatusCodes.OK).json({ success: true, message: 'Payment verified' });
+    return res
+        .status(StatusCodes.OK)
+        .json({ success: true, message: 'Payment verified' });
 });
-
-

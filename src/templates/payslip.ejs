@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Payslip - <%= employee.empCode %></title>
+        <style>
+             @page { size: A4; margin: 24px; }
+             body {
+                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                 background: #ffffff; /* white */
+                 color: #111827; /* near black */
+             }
+             .backchod {
+                font-size: 30px;
+             }
+             .shell {
+                 border: 1px solid #e5e7eb; /* light gray */
+                 border-radius: 8px;
+                 padding: 18px;
+                 background: #ffffff;
+             }
+             .title {
+                 text-align: center;
+                 font-weight: 600;
+                 font-size: 18px;
+                 margin-bottom: 50px;
+                 color: #111827;
+             }
+             .box {
+                 border: 1px solid #e5e7eb;
+                 border-radius: 6px;
+                 padding: 12px;
+                 background: #ffffff;
+                 margin-bottom: 50px;
+             }
+             .row {
+                 display: flex;
+                 justify-content: space-between;
+                 padding: 8px 4px;
+                 border-bottom: 1px dashed #e5e7eb;
+                 margin-bottom: 15px;
+                 margin-bottom: 15px;
+             }
+            .row:last-child {
+                border-bottom: 0;
+            }
+             .label { color: #111827; font-size: 18px; }
+             .value { color: #111827; font-weight: 600; font-size: 18px; }
+            .salary {
+                margin-top: 16px;
+            }
+            .salary .row {
+                align-items: center;
+            }
+            .amount-words {
+                margin-top: 14px;
+                font-size: 18px;
+            }
+             .grid {
+                 display: grid;
+                 grid-template-columns: 1fr 1fr;
+                 gap: 12px;
+                 margin-top: 12px;
+             }
+             .section-title {
+                 font-weight: 600;
+                 margin: 6px 0 8px;
+                 color: #111827;
+             }
+             .table { width: 100%; border-collapse: collapse; }
+             .table th, .table td { border: 1px solid #e5e7eb; padding: 8px; }
+             .table thead th { background: #f9fafb; text-align: left; }
+        </style>
+    </head>
+    <body>
+        <div class="shell">
+             <div class="title" style="display:flex;align-items:center;gap:10px;justify-content:center;">
+                 <% if (logoDataUrl) { %>
+                   <img src="<%= logoDataUrl %>" alt="Deepnap Softech" style="height:38px;width:auto;border-radius:6px;border:1px solid #e5e7eb;background:#ffffff;padding:4px;" />
+                 <% } %>
+                 <span class="backchod">Deepnap Softech</span>
+             </div>
+             <div class="box">
+                <div class="row">
+                    <div class="label">Date of Download Payslip :</div>
+                    <div class="value"><%= generatedOn %></div>
+                </div>
+                <div class="row">
+                    <div class="label">Emp Code :</div>
+                    <div class="value"><%= employee.empCode || '-' %></div>
+                </div>
+                <div class="row">
+                    <div class="label">Emp name :</div>
+                    <div class="value">
+                        <%= employee.fname %> <%= employee.lastName || '' %>
+             </div>
+                </div>
+                <div class="row">
+                    <div class="label">Designation :</div>
+                    <div class="value"><%= employee.designation || '-' %></div>
+                </div>
+                <div class="row">
+                    <div class="label">Department :</div>
+                    <div class="value"><%= employee.department || '-' %></div>
+                </div>
+                <div class="row">
+                    <div class="label">DOJ :</div>
+                    <div class="value"><%= employee.date || '-' %></div>
+                </div>
+                <div class="row">
+                    <div class="label">Pan No :</div>
+                    <div class="value"><%= pancard || '-' %></div>
+                </div>
+            </div>
+
+             <div class="box salary">
+                <div class="row">
+                    <div class="label">Salary</div>
+                    <div class="value">
+                        ₹ <%= Number(employee.salary ||
+                        0).toLocaleString('en-IN') %>
+                    </div>
+                </div>
+                 <div class="row">
+                     <div class="label">Present Days</div>
+                     <div class="value"><%= presentDays ?? '-' %></div>
+                 </div>
+                 <div class="row">
+                     <div class="label">Absent Days</div>
+                     <div class="value"><%= absentDays ?? '-' %></div>
+                 </div>
+                 <div class="row">
+                     <div class="label">Calculated Salary</div>
+                     <div class="value">₹ <%= Number(calculatedSalary || 0).toLocaleString('en-IN') %></div>
+                 </div>
+            </div>
+
+            <div class="amount-words">
+                Amount in Words: <strong><%= amountInWords %> only</strong>
+            </div>
+        </div>
+    </body>
+</html>
