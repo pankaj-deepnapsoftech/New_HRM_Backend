@@ -32,6 +32,7 @@ import AttendanceRegularizationRoutes from './AttendanceRegularizationRoutes.js'
 import OtpRoutes from './Otp.routes.js';
 import DesignationRoutes from './DesignationRoutes.js';
 import AnnouncementRoutes from './Announcement.routes.js';
+import ResignationRequestRoutes from './ResignationRequestRoutes.js';
 
 const router = Router();
 router.use("/user", UserRoutes);
@@ -50,4 +51,5 @@ router.use("/payments", PaymentsRoutes);
 router.use("/attendance-regularization", AttendanceRegularizationRoutes);
 router.use("/designations", DesignationRoutes);
 router.use("/announcements", AnnouncementRoutes);
+router.use("/resignation", ResignationRequestRoutes);
 export default router;
