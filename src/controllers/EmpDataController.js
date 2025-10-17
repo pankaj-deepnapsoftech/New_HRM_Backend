@@ -7,7 +7,6 @@ import mongoose from 'mongoose';
 import Attendance from '../models/AttendanceModel.js';
 import moment from 'moment';
 
-
 export const addEmployee = async (req, res) => {
     try {
         const {
@@ -88,7 +87,10 @@ export const addEmployee = async (req, res) => {
 export const getAllEmployees = async (req, res) => {
     try {
         const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
-        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
+        const adminId =
+            isSuperAdmin && req.query.adminId
+                ? req.query.adminId
+                : req?.CurrentUser?._id;
         const employees = await EmpData.find({ adminId });
 
         res.status(200).json({
@@ -112,7 +114,10 @@ export const getAllEmployeesWithPagination = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
-        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
+        const adminId =
+            isSuperAdmin && req.query.adminId
+                ? req.query.adminId
+                : req?.CurrentUser?._id;
         const employees = await EmpData.find({ adminId })
             .populate({
                 path: 'verificationDetails',
@@ -133,7 +138,6 @@ export const getAllEmployeesWithPagination = async (req, res) => {
         });
     }
 };
-
 
 export const addAssetToEmployee = async (req, res) => {
     try {
@@ -161,7 +165,6 @@ export const addAssetToEmployee = async (req, res) => {
         });
     }
 };
-
 
 export const removeAssetFromEmployee = async (req, res) => {
     try {
@@ -193,9 +196,9 @@ export const getAssetByEmpId = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const empData = await EmpData.findById(id)
-            .select('fname empCode assets ') 
-           
+        const empData = await EmpData.findById(id).select(
+            'fname empCode assets '
+        );
 
         if (!empData) {
             return res.status(404).json({ message: 'Employee not found' });
@@ -206,8 +209,6 @@ export const getAssetByEmpId = async (req, res) => {
         res.status(500).json({ message: error.message || 'Server error' });
     }
 };
-
-
 
 export const createEmployeeCredentials = async (req, res) => {
     try {
@@ -246,7 +247,8 @@ export const createEmployeeCredentials = async (req, res) => {
 
         // Update EmpData with credentials instead of creating User
         const username = await generateUniqueUsername();
-        const tempPassword = password || Math.random().toString(36).slice(-10) + '#A1';
+        const tempPassword =
+            password || Math.random().toString(36).slice(-10) + '#A1';
 
         // Update EmpData with login credentials
         emp.email = email;
@@ -325,145 +327,169 @@ export const deleteEmployee = async (req, res) => {
     }
 };
 
-
 export const terminateEmployee = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    const { id } = req.params;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { id } = req.params;
 
-    // Find the employee in EmpData
-    const emp = await EmpData.findById(id).session(session);
-    if (!emp) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: 'Employee not found' });
+        // Find the employee in EmpData
+        const emp = await EmpData.findById(id).session(session);
+        if (!emp) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+
+        // Create a new document in TerminatedEmployees
+        const terminatedEmpData = {
+            ...emp.toObject(), // Copy all fields
+            _id: new mongoose.Types.ObjectId(), // Generate new ID
+            terminationDate: new Date(), // Set termination date
+            Empstatus: 'Terminated', // Ensure status is Terminated
+            adminId: emp.adminId,
+        };
+        const terminatedEmp = await TerminatedEmployees.create(
+            [terminatedEmpData],
+            { session }
+        );
+
+        // Update Employee collection to point to TerminatedEmployees
+        if (emp.verificationDetails) {
+            await EmployeeModel.findByIdAndUpdate(
+                emp.verificationDetails,
+                {
+                    Emp_id: terminatedEmp[0]._id,
+                    refCollection: 'TerminatedEmployees',
+                }, // NEW: Track collection
+                { session }
+            );
+        }
+
+        // Delete from EmpData
+        await EmpData.findByIdAndDelete(id, { session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).json({
+            message: 'Employee terminated and moved to TerminatedEmployees',
+            data: terminatedEmp[0],
+        });
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(400).json({
+            message: 'Failed to terminate employee',
+            error: err.message,
+        });
     }
-
-    // Create a new document in TerminatedEmployees
-    const terminatedEmpData = {
-      ...emp.toObject(), // Copy all fields
-      _id: new mongoose.Types.ObjectId(), // Generate new ID
-      terminationDate: new Date(), // Set termination date
-      Empstatus: 'Terminated', // Ensure status is Terminated
-      adminId: emp.adminId,
-    };
-    const terminatedEmp = await TerminatedEmployees.create([terminatedEmpData], { session });
-
-    // Update Employee collection to point to TerminatedEmployees
-    if (emp.verificationDetails) {
-      await EmployeeModel.findByIdAndUpdate(
-        emp.verificationDetails,
-        { Emp_id: terminatedEmp[0]._id, refCollection: 'TerminatedEmployees' }, // NEW: Track collection
-        { session }
-      );
-    }
-
-    // Delete from EmpData
-    await EmpData.findByIdAndDelete(id, { session });
-
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
-
-    res.status(200).json({ message: 'Employee terminated and moved to TerminatedEmployees', data: terminatedEmp[0] });
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-    res.status(400).json({
-      message: 'Failed to terminate employee',
-      error: err.message,
-    });
-  }
 };
 
-
 export const getAllTerminatedEmployees = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
-    const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
+        const adminId =
+            isSuperAdmin && req.query.adminId
+                ? req.query.adminId
+                : req?.CurrentUser?._id;
 
-    const employees = await TerminatedEmployees.find({ adminId })
-      .populate({
-        path: "verificationDetails",
-        select: "aadhaar pancard photo Bank_Proof Voter_Id Driving_Licance UAN_number Bank_Account Bank_Name IFSC_Code"
-      })
-      .skip(skip)
-      .limit(limit)
-      .sort({ terminationDate: -1 }); // Sort by most recent termination
+        const employees = await TerminatedEmployees.find({ adminId })
+            .populate({
+                path: 'verificationDetails',
+                select: 'aadhaar pancard photo Bank_Proof Voter_Id Driving_Licance UAN_number Bank_Account Bank_Name IFSC_Code',
+            })
+            .skip(skip)
+            .limit(limit)
+            .sort({ terminationDate: -1 }); // Sort by most recent termination
 
-    const total = await TerminatedEmployees.countDocuments({ adminId });
+        const total = await TerminatedEmployees.countDocuments({ adminId });
 
-    res.status(200).json({
-      message: 'Paginated terminated employees',
-      data: employees,
-      currentPage: page,
-      totalPages: Math.ceil(total / limit),
-      total,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: 'Failed to fetch terminated employees',
-      error: err.message,
-    });
-  }
+        res.status(200).json({
+            message: 'Paginated terminated employees',
+            data: employees,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            total,
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: 'Failed to fetch terminated employees',
+            error: err.message,
+        });
+    }
 };
 
 // NEW: Delete a terminated employee by ID
 export const deleteTerminatedEmployee = async (req, res) => {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
 
-    const terminatedEmp = await TerminatedEmployees.findById(id);
-    if (!terminatedEmp) {
-      return res.status(404).json({ message: 'Terminated employee not found' });
+        const terminatedEmp = await TerminatedEmployees.findById(id);
+        if (!terminatedEmp) {
+            return res
+                .status(404)
+                .json({ message: 'Terminated employee not found' });
+        }
+
+        // Optional: Clean up related Employee data if needed
+        if (terminatedEmp.verificationDetails) {
+            await EmployeeModel.findByIdAndDelete(
+                terminatedEmp.verificationDetails
+            );
+        }
+
+        await TerminatedEmployees.findByIdAndDelete(id);
+
+        res.status(200).json({
+            message: 'Terminated employee deleted successfully',
+        });
+    } catch (err) {
+        res.status(400).json({
+            message: 'Failed to delete terminated employee',
+            error: err.message,
+        });
     }
-
-    // Optional: Clean up related Employee data if needed
-    if (terminatedEmp.verificationDetails) {
-      await EmployeeModel.findByIdAndDelete(terminatedEmp.verificationDetails);
-    }
-
-    await TerminatedEmployees.findByIdAndDelete(id);
-
-    res.status(200).json({ message: 'Terminated employee deleted successfully' });
-  } catch (err) {
-    res.status(400).json({
-      message: 'Failed to delete terminated employee',
-      error: err.message,
-    });
-  }
 };
-
 
 export const getDailyAttendance = async (req, res) => {
     try {
         const { date } = req.query;
         const targetDate = date || moment().format('YYYY-MM-DD');
         const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
-        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
-        
+        const adminId =
+            isSuperAdmin && req.query.adminId
+                ? req.query.adminId
+                : req?.CurrentUser?._id;
+
         // Get employees under selected admin
-        const employees = await EmpData.find({ adminId }).select('fname email lastLoginTime logoutTime');
-        
+        const employees = await EmpData.find({ adminId }).select(
+            'fname email lastLoginTime logoutTime'
+        );
+
         // Get attendance data from new collection for the specific date
-        const attendanceData = await Attendance.find({ date: targetDate }).populate('employeeId', 'fname email');
-        
+        const attendanceData = await Attendance.find({
+            date: targetDate,
+        }).populate('employeeId', 'fname email');
+
         // Create attendance map for quick lookup (use string keys and guard nulls)
         const attendanceMap = {};
-        attendanceData.forEach(att => {
+        attendanceData.forEach((att) => {
             if (!att || !att.employeeId) return; // skip if populate failed or reference missing
-            const empId = att.employeeId._id ? att.employeeId._id.toString() : att.employeeId.toString();
+            const empId = att.employeeId._id
+                ? att.employeeId._id.toString()
+                : att.employeeId.toString();
             attendanceMap[empId] = att;
         });
 
-        const attendanceReport = employees.map(emp => {
+        const attendanceReport = employees.map((emp) => {
             const empKey = emp._id ? emp._id.toString() : String(emp._id);
             const dayAttendance = attendanceMap[empKey];
-            
+
             return {
                 _id: emp._id,
                 fname: emp.fname,
@@ -471,15 +497,19 @@ export const getDailyAttendance = async (req, res) => {
                 status: dayAttendance ? dayAttendance.status : 'Absent',
                 loginTime: dayAttendance ? dayAttendance.loginTime : '',
                 logoutTime: dayAttendance ? dayAttendance.logoutTime : '',
-                totalWorkingHours: dayAttendance ? dayAttendance.totalWorkingHours : '',
-                loginLocation: dayAttendance ? dayAttendance.loginLocation : 'N/A',
-                date: targetDate
+                totalWorkingHours: dayAttendance
+                    ? dayAttendance.totalWorkingHours
+                    : '',
+                loginLocation: dayAttendance
+                    ? dayAttendance.loginLocation
+                    : 'N/A',
+                date: targetDate,
             };
         });
 
         res.status(200).json({
             message: 'Daily attendance report retrieved successfully',
-            data: attendanceReport
+            data: attendanceReport,
         });
     } catch (err) {
         res.status(400).json({
@@ -489,17 +519,20 @@ export const getDailyAttendance = async (req, res) => {
     }
 };
 
-
 export const getEmployeeMonthlyAttendanceById = async (req, res) => {
     try {
         const { employeeId } = req.params;
         const { month, year } = req.query;
 
         if (!month || !year) {
-            return res.status(400).json({ message: 'Month and year are required' });
+            return res
+                .status(400)
+                .json({ message: 'Month and year are required' });
         }
 
-        const emp = await EmpData.findById(employeeId).select('fname email empCode department');
+        const emp = await EmpData.findById(employeeId).select(
+            'fname email empCode department'
+        );
         if (!emp) {
             return res.status(404).json({ message: 'Employee not found' });
         }
@@ -512,32 +545,33 @@ export const getEmployeeMonthlyAttendanceById = async (req, res) => {
             employeeId,
             date: {
                 $gte: startDate.format('YYYY-MM-DD'),
-                $lte: endDate.format('YYYY-MM-DD')
-            }
+                $lte: endDate.format('YYYY-MM-DD'),
+            },
         }).sort({ date: 1 });
 
         // Create a complete list of dates for that month
         const daysInMonth = endDate.diff(startDate, 'days') + 1;
         const report = [];
         for (let i = 0; i < daysInMonth; i++) {
-            const currentDate = moment(startDate).add(i, "days");
+            const currentDate = moment(startDate).add(i, 'days');
             // 👇 Skip future dates
-            if (currentDate.isAfter(moment(), "day")) break;
+            if (currentDate.isAfter(moment(), 'day')) break;
 
-            const dateStr = currentDate.format("YYYY-MM-DD");
+            const dateStr = currentDate.format('YYYY-MM-DD');
             const attendance = attendanceData.find((a) => a.date === dateStr);
 
             report.push({
                 date: dateStr,
-                status: attendance ? attendance.status : "Absent",
-                loginTime: attendance ? attendance.loginTime : "",
-                logoutTime: attendance ? attendance.logoutTime : "",
-                totalWorkingHours: attendance ? attendance.totalWorkingHours : "",
+                status: attendance ? attendance.status : 'Absent',
+                loginTime: attendance ? attendance.loginTime : '',
+                logoutTime: attendance ? attendance.logoutTime : '',
+                totalWorkingHours: attendance
+                    ? attendance.totalWorkingHours
+                    : '',
             });
         }
 
-
-        const presentDays = report.filter(r => r.status === 'Present').length;
+        const presentDays = report.filter((r) => r.status === 'Present').length;
         const absentDays = daysInMonth - presentDays;
 
         res.status(200).json({
@@ -547,28 +581,29 @@ export const getEmployeeMonthlyAttendanceById = async (req, res) => {
                 name: emp.fname,
                 email: emp.email,
                 empCode: emp.empCode,
-                department: emp.department
+                department: emp.department,
             },
             month,
             year,
             totalDays: daysInMonth,
             presentDays,
             absentDays,
-            data: report
+            data: report,
         });
     } catch (err) {
         res.status(400).json({
             message: 'Failed to get employee monthly attendance',
-            error: err.message
+            error: err.message,
         });
     }
 };
 
-
 export const getEmployeeLeaveSummary = async (req, res) => {
     try {
         const { employeeId } = req.params;
-        const emp = await EmpData.findById(employeeId).select('allocatedLeaves usedLeaves remainingLeaves');
+        const emp = await EmpData.findById(employeeId).select(
+            'allocatedLeaves usedLeaves remainingLeaves'
+        );
         if (!emp) {
             return res.status(404).json({ message: 'Employee not found' });
         }
@@ -577,11 +612,19 @@ export const getEmployeeLeaveSummary = async (req, res) => {
             data: {
                 allocatedLeaves: emp.allocatedLeaves ?? 0,
                 usedLeaves: emp.usedLeaves ?? 0,
-                remainingLeaves: emp.remainingLeaves ?? Math.max(0, (emp.allocatedLeaves ?? 0) - (emp.usedLeaves ?? 0)),
+                remainingLeaves:
+                    emp.remainingLeaves ??
+                    Math.max(
+                        0,
+                        (emp.allocatedLeaves ?? 0) - (emp.usedLeaves ?? 0)
+                    ),
             },
         });
     } catch (err) {
-        return res.status(500).json({ message: 'Failed to fetch leave summary', error: err.message });
+        return res.status(500).json({
+            message: 'Failed to fetch leave summary',
+            error: err.message,
+        });
     }
 };
 
@@ -590,12 +633,15 @@ export const getMonthlyAttendance = async (req, res) => {
     try {
         const { month, year, department } = req.query;
         const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
-        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
-        
+        const adminId =
+            isSuperAdmin && req.query.adminId
+                ? req.query.adminId
+                : req?.CurrentUser?._id;
+
         // Validate month and year
         if (!month || !year) {
-            return res.status(400).json({ 
-                message: 'Month and year are required parameters' 
+            return res.status(400).json({
+                message: 'Month and year are required parameters',
             });
         }
 
@@ -610,26 +656,36 @@ export const getMonthlyAttendance = async (req, res) => {
         }
 
         // Get all employees with department filter
-        const employees = await EmpData.find(employeeFilter).select('fname email department designation empCode salary location');
-        
+        const employees = await EmpData.find(employeeFilter).select(
+            'fname email department designation empCode salary location'
+        );
+
         // Get attendance data for the entire month
         const attendanceData = await Attendance.find({
             date: {
                 $gte: startDate.format('YYYY-MM-DD'),
-                $lte: endDate.format('YYYY-MM-DD')
-            }
-        }).populate('employeeId', 'fname email department designation empCode salary location');
+                $lte: endDate.format('YYYY-MM-DD'),
+            },
+        }).populate(
+            'employeeId',
+            'fname email department designation empCode salary location'
+        );
 
         // Create attendance summary for each employee
-        const attendanceReport = employees.map(emp => {
-            const empAttendance = attendanceData.filter(att => 
-                att.employeeId && att.employeeId._id.toString() === emp._id.toString()
+        const attendanceReport = employees.map((emp) => {
+            const empAttendance = attendanceData.filter(
+                (att) =>
+                    att.employeeId &&
+                    att.employeeId._id.toString() === emp._id.toString()
             );
-            
-            const presentDays = empAttendance.filter(att => att.status === 'Present').length;
-            const absentDays = empAttendance.filter(att => att.status === 'Absent').length;
+
+            const presentDays = empAttendance.filter(
+                (att) => att.status === 'Present'
+            ).length;
+            // Compute for the entire month as requested (include all days in month)
             const totalDays = endDate.diff(startDate, 'days') + 1;
-            
+            const absentDays = Math.max(totalDays - presentDays, 0);
+
             return {
                 _id: emp._id,
                 fname: emp.fname,
@@ -642,14 +698,17 @@ export const getMonthlyAttendance = async (req, res) => {
                 presentDays,
                 absentDays,
                 totalDays,
-                attendancePercentage: totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0
+                attendancePercentage:
+                    totalDays > 0
+                        ? Math.round((presentDays / totalDays) * 100)
+                        : 0,
             };
         });
 
         res.status(200).json({
             message: 'Monthly attendance report retrieved successfully',
             data: attendanceReport,
-            filters: { month, year, department }
+            filters: { month, year, department },
         });
     } catch (err) {
         res.status(400).json({
@@ -664,12 +723,15 @@ export const getYearlyAttendance = async (req, res) => {
     try {
         const { year, department } = req.query;
         const isSuperAdmin = req?.CurrentUser?.role === 'SuperAdmin';
-        const adminId = isSuperAdmin && req.query.adminId ? req.query.adminId : req?.CurrentUser?._id;
-        
+        const adminId =
+            isSuperAdmin && req.query.adminId
+                ? req.query.adminId
+                : req?.CurrentUser?._id;
+
         // Validate year
         if (!year) {
-            return res.status(400).json({ 
-                message: 'Year is required parameter' 
+            return res.status(400).json({
+                message: 'Year is required parameter',
             });
         }
 
@@ -684,26 +746,37 @@ export const getYearlyAttendance = async (req, res) => {
         }
 
         // Get all employees with department filter
-        const employees = await EmpData.find(employeeFilter).select('fname email department designation empCode salary location');
-        
+        const employees = await EmpData.find(employeeFilter).select(
+            'fname email department designation empCode salary location'
+        );
+
         // Get attendance data for the entire year
         const attendanceData = await Attendance.find({
             date: {
                 $gte: startDate.format('YYYY-MM-DD'),
-                $lte: endDate.format('YYYY-MM-DD')
-            }
-        }).populate('employeeId', 'fname email department designation empCode salary location');
+                $lte: endDate.format('YYYY-MM-DD'),
+            },
+        }).populate(
+            'employeeId',
+            'fname email department designation empCode salary location'
+        );
 
         // Create attendance summary for each employee
-        const attendanceReport = employees.map(emp => {
-            const empAttendance = attendanceData.filter(att => 
-                att.employeeId && att.employeeId._id.toString() === emp._id.toString()
+        const attendanceReport = employees.map((emp) => {
+            const empAttendance = attendanceData.filter(
+                (att) =>
+                    att.employeeId &&
+                    att.employeeId._id.toString() === emp._id.toString()
             );
-            
-            const presentDays = empAttendance.filter(att => att.status === 'Present').length;
-            const absentDays = empAttendance.filter(att => att.status === 'Absent').length;
+
+            const presentDays = empAttendance.filter(
+                (att) => att.status === 'Present'
+            ).length;
+            const absentDays = empAttendance.filter(
+                (att) => att.status === 'Absent'
+            ).length;
             const totalDays = endDate.diff(startDate, 'days') + 1;
-            
+
             return {
                 _id: emp._id,
                 fname: emp.fname,
@@ -716,14 +789,17 @@ export const getYearlyAttendance = async (req, res) => {
                 presentDays,
                 absentDays,
                 totalDays,
-                attendancePercentage: totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0
+                attendancePercentage:
+                    totalDays > 0
+                        ? Math.round((presentDays / totalDays) * 100)
+                        : 0,
             };
         });
 
         res.status(200).json({
             message: 'Yearly attendance report retrieved successfully',
             data: attendanceReport,
-            filters: { year, department }
+            filters: { year, department },
         });
     } catch (err) {
         res.status(400).json({
@@ -738,7 +814,7 @@ export const checkInAttendance = async (req, res) => {
         const { employeeId } = req.params;
         const currentDate = moment().format('YYYY-MM-DD');
         const currentTime = moment().format('HH:mm:ss');
-        
+
         const emp = await EmpData.findById(employeeId);
         if (!emp) {
             return res.status(404).json({ message: 'Employee not found' });
@@ -747,26 +823,26 @@ export const checkInAttendance = async (req, res) => {
         // Check if attendance already exists for today
         let todayAttendance = await Attendance.findOne({
             employeeId: employeeId,
-            date: currentDate
+            date: currentDate,
         });
 
         if (todayAttendance) {
             if (todayAttendance.loginTime) {
-                return res.status(400).json({ 
+                return res.status(400).json({
                     message: 'Already checked in today',
                     data: {
                         employeeId: emp._id,
                         name: emp.fname,
                         date: currentDate,
                         loginTime: todayAttendance.loginTime,
-                        status: todayAttendance.status
-                    }
+                        status: todayAttendance.status,
+                    },
                 });
             } else {
                 // Update existing record with check-in time
                 todayAttendance.loginTime = currentTime;
-            todayAttendance.status = 'Present';
-            await todayAttendance.save();
+                todayAttendance.status = 'Present';
+                await todayAttendance.save();
             }
         } else {
             // Create new attendance record
@@ -775,13 +851,13 @@ export const checkInAttendance = async (req, res) => {
                 date: currentDate,
                 status: 'Present',
                 loginTime: currentTime,
-                logoutTime: ''
+                logoutTime: '',
             });
         }
 
         // Update employee's last login time
-            emp.lastLoginTime = currentTime;
-            await emp.save();
+        emp.lastLoginTime = currentTime;
+        await emp.save();
 
         res.status(200).json({
             message: 'Check-in successful',
@@ -791,8 +867,8 @@ export const checkInAttendance = async (req, res) => {
                 email: emp.email,
                 date: currentDate,
                 loginTime: todayAttendance.loginTime,
-                status: 'Present'
-            }
+                status: 'Present',
+            },
         });
     } catch (err) {
         res.status(400).json({
@@ -807,7 +883,7 @@ export const checkOutAttendance = async (req, res) => {
         const { employeeId } = req.params;
         const currentDate = moment().format('YYYY-MM-DD');
         const currentTime = moment().format('HH:mm:ss');
-        
+
         const emp = await EmpData.findById(employeeId);
         if (!emp) {
             return res.status(404).json({ message: 'Employee not found' });
@@ -816,23 +892,23 @@ export const checkOutAttendance = async (req, res) => {
         // Find today's attendance record
         const todayAttendance = await Attendance.findOne({
             employeeId: employeeId,
-            date: currentDate
+            date: currentDate,
         });
 
         if (!todayAttendance) {
-            return res.status(400).json({ 
-                message: 'No check-in found for today. Please check-in first.' 
+            return res.status(400).json({
+                message: 'No check-in found for today. Please check-in first.',
             });
         }
 
         if (!todayAttendance.loginTime) {
-            return res.status(400).json({ 
-                message: 'No check-in time found. Please check-in first.' 
+            return res.status(400).json({
+                message: 'No check-in time found. Please check-in first.',
             });
         }
 
         if (todayAttendance.logoutTime) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Already checked out today',
                 data: {
                     employeeId: emp._id,
@@ -840,38 +916,44 @@ export const checkOutAttendance = async (req, res) => {
                     date: currentDate,
                     loginTime: todayAttendance.loginTime,
                     logoutTime: todayAttendance.logoutTime,
-                    totalWorkingHours: todayAttendance.totalWorkingHours
-                }
+                    totalWorkingHours: todayAttendance.totalWorkingHours,
+                },
             });
         }
 
-            // Update logout time
-            todayAttendance.logoutTime = currentTime;
-            
-            // Calculate working hours
-                const loginMoment = moment(`${currentDate} ${todayAttendance.loginTime}`, 'YYYY-MM-DD HH:mm:ss');
-                const logoutMoment = moment(`${currentDate} ${todayAttendance.logoutTime}`, 'YYYY-MM-DD HH:mm:ss');
-                const workingHours = logoutMoment.diff(loginMoment, 'hours', true);
-                todayAttendance.totalWorkingHours = workingHours.toFixed(2) + ' hours';
-            
-            await todayAttendance.save();
+        // Update logout time
+        todayAttendance.logoutTime = currentTime;
+
+        // Calculate working hours
+        const loginMoment = moment(
+            `${currentDate} ${todayAttendance.loginTime}`,
+            'YYYY-MM-DD HH:mm:ss'
+        );
+        const logoutMoment = moment(
+            `${currentDate} ${todayAttendance.logoutTime}`,
+            'YYYY-MM-DD HH:mm:ss'
+        );
+        const workingHours = logoutMoment.diff(loginMoment, 'hours', true);
+        todayAttendance.totalWorkingHours = workingHours.toFixed(2) + ' hours';
+
+        await todayAttendance.save();
 
         // Update employee's logout time
         emp.logoutTime = currentTime;
-            await emp.save();
+        await emp.save();
 
-            res.status(200).json({
+        res.status(200).json({
             message: 'Check-out successful',
-                data: {
-                    employeeId: emp._id,
-                    name: emp.fname,
-                    email: emp.email,
-                    date: currentDate,
-                    loginTime: todayAttendance.loginTime,
+            data: {
+                employeeId: emp._id,
+                name: emp.fname,
+                email: emp.email,
+                date: currentDate,
+                loginTime: todayAttendance.loginTime,
                 logoutTime: todayAttendance.logoutTime,
                 totalWorkingHours: todayAttendance.totalWorkingHours,
-                status: 'Present'
-            }
+                status: 'Present',
+            },
         });
     } catch (err) {
         res.status(400).json({
@@ -881,19 +963,18 @@ export const checkOutAttendance = async (req, res) => {
     }
 };
 
-
 // Get daily attendance report
 // export const getDailyAttendance = async (req, res) => {
 //     try {
 //         const { date } = req.query;
 //         const targetDate = date || moment().format('YYYY-MM-DD');
-        
+
 //         // Get all employees
 //         const employees = await EmpData.find({}).select('fname email lastLoginTime logoutTime');
-        
+
 //         // Get attendance data from new collection for the specific date
 //         const attendanceData = await Attendance.find({ date: targetDate }).populate('employeeId', 'fname email');
-        
+
 //         // Create attendance map for quick lookup (use string keys and guard nulls)
 //         const attendanceMap = {};
 //         attendanceData.forEach(att => {
@@ -907,7 +988,7 @@ export const checkOutAttendance = async (req, res) => {
 //         const attendanceReport = employees.map(emp => {
 //             const empKey = emp._id ? emp._id.toString() : String(emp._id);
 //             const dayAttendance = attendanceMap[empKey];
-            
+
 //             return {
 //                 _id: emp._id,
 //                 fname: emp.fname,
@@ -944,30 +1025,30 @@ export const getTodayBirthdays = async (req, res) => {
         const employeesWithBirthdays = await EmpData.find({
             adminId: adminId,
             dob: { $exists: true, $ne: '' },
-            Empstatus: 'active'
+            Empstatus: 'active',
         }).select('fname lastName empCode department designation avatar dob');
 
         // Filter employees whose birthday matches today's month and day
-        const todaysBirthdays = employeesWithBirthdays.filter(emp => {
+        const todaysBirthdays = employeesWithBirthdays.filter((emp) => {
             if (!emp.dob) return false;
-            
+
             const dobDate = new Date(emp.dob);
             const dobMonth = dobDate.getMonth() + 1;
             const dobDay = dobDate.getDate();
-            
+
             return dobMonth === todayMonth && dobDay === todayDay;
         });
 
         res.status(200).json({
             success: true,
             data: todaysBirthdays,
-            count: todaysBirthdays.length
+            count: todaysBirthdays.length,
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch today\'s birthdays',
-            error: error.message
+            message: "Failed to fetch today's birthdays",
+            error: error.message,
         });
     }
 };

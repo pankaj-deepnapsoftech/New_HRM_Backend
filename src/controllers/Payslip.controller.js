@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { renderPayslipPdf } from '../utils/pdf.js';
 import EmpData from '../models/EmpDataModel.js';
 import { EmployeeModel } from '../models/Employee.model.js';
+import { BenefitsModel } from '../models/Benefits.model.js';
 
 export const downloadPayslip = async (req, res) => {
     try {
@@ -49,6 +50,22 @@ export const downloadPayslip = async (req, res) => {
         ];
         const generatedOn = new Date().toLocaleDateString('en-IN');
 
+        // Pull PF & Perks if any
+        const month = req.query.month; // optional YYYY-MM for month-specific benefits
+        let benefits = await BenefitsModel.findOne({
+            empId: employee._id,
+        }).lean();
+        if (month && benefits?.history?.length) {
+            const entry = benefits.history.find((h) => h.month === month);
+            if (entry) {
+                benefits = {
+                    empId: employee._id,
+                    pfContribution: entry.pfContribution,
+                    perks: entry.perks,
+                };
+            }
+        }
+
         const pdf = await renderPayslipPdf({
             employee,
             pancard,
@@ -60,6 +77,7 @@ export const downloadPayslip = async (req, res) => {
                 : undefined,
             earningsBreakdown,
             generatedOn,
+            benefits,
         });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(

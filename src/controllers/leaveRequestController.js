@@ -32,7 +32,7 @@ export const applyLeaveToFinal = async (requestDoc, session = null) => {
             mode === 'half' ? daysThisMonth * 0.5 : daysThisMonth;
 
         // Prepare update: atomic increment + push entry for auditing
-        await Leave.findOneAndUpdate(
+        await Leave.findOneAndUpdate    (
             { employeeId, month, year },
             {
                 $inc: { [type]: effectiveDays },

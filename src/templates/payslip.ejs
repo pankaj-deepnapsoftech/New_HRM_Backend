@@ -39,8 +39,8 @@
                  justify-content: space-between;
                  padding: 8px 4px;
                  border-bottom: 1px dashed #e5e7eb;
-                 margin-bottom: 15px;
-                 margin-bottom: 15px;
+                 margin-bottom: 5px;
+                 margin-top: 5px;
              }
             .row:last-child {
                 border-bottom: 0;
@@ -134,6 +134,29 @@
                      <div class="label">Calculated Salary</div>
                      <div class="value">₹ <%= Number(calculatedSalary || 0).toLocaleString('en-IN') %></div>
                  </div>
+                 <% if (benefits) { %>
+                   <div class="section-title">PF & Perks</div>
+                   <table class="table">
+                     <thead>
+                       <tr>
+                         <th>Item</th>
+                         <th>Amount (₹)</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       <tr>
+                         <td>PF Contribution</td>
+                         <td><%= Number(benefits.pfContribution||0).toLocaleString('en-IN') %></td>
+                       </tr>
+                       <% (benefits.perks||[]).forEach(function(p){ %>
+                         <tr>
+                           <td><%= p.label %></td>
+                           <td><%= Number(p.amount||0).toLocaleString('en-IN') %></td>
+                         </tr>
+                       <% }) %>
+                     </tbody>
+                   </table>
+                 <% } %>
             </div>
 
             <div class="amount-words">
