@@ -13,9 +13,9 @@ export const AdminAuthorization = async (req, res, next) => {
             });
         }
 
-        // Check if user has Admin role
+        // Check if user has Admin or SuperAdmin role
         console.log('AdminAuthorization - User role:', req.CurrentUser.role);
-        if (req.CurrentUser.role !== 'Admin') {
+        if (req.CurrentUser.role !== 'Admin' && req.CurrentUser.role !== 'SuperAdmin') {
             console.log('AdminAuthorization - Access denied, role is:', req.CurrentUser.role);
             return res.status(StatusCodes.FORBIDDEN).json({
                 message: 'Access denied. Admin privileges required.'

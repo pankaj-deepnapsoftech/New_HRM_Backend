@@ -106,7 +106,18 @@ export const loginSuperAdmin = AsyncHandler(async (req, res) => {
     const { username, password, browser, isMobile, location } = req.body;
     const userIp = req.headers['x-forwarded-for']?.split(',').shift() || req.socket.remoteAddress;
 
-    // Find SuperAdmin user in SuperAdmins collection
+    // IMPORTANT: Check if user exists in UserModel first - if yes, reject login
+    // SuperAdmin can ONLY exist in SuperAdminModel collection
+    const existInUserModel = await UserModel.findOne({
+        $or: [{ email: username }, { username }],
+    });
+    
+    if (existInUserModel) {
+        // Reject login if user exists in UserModel (even if they have SuperAdmin role)
+        throw new BadRequestError('Invalid SuperAdmin credentials. SuperAdmin must login through SuperAdmin portal only.', 'loginSuperAdmin method');
+    }
+
+    // Find SuperAdmin user ONLY in SuperAdmins collection
     const exist = await SuperAdminModel.findOne({
         $or: [{ email: username }, { username }],
         role: 'SuperAdmin'

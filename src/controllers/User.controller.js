@@ -127,12 +127,18 @@ export const LoginUser = AsyncHandler(async (req, res) => {
             throw new BadRequestError('Bad Credintial', 'LoginUser method');
         }
 
+        // IMPORTANT: SuperAdmin users can ONLY login through SuperAdmin login endpoint
+        // Reject any user with SuperAdmin role trying to login through regular login
+        if (exist.role === 'SuperAdmin') {
+            throw new BadRequestError('SuperAdmin users must login through SuperAdmin portal only', 'LoginUser method');
+        }
+
         // Role-based login validation for admin/user
-        if (loginType === 'admin' && !['Admin', 'SuperAdmin'].includes(exist.role)) {
+        if (loginType === 'admin' && exist.role !== 'Admin') {
             throw new BadRequestError('Bad Credintial', 'LoginUser method');
         }
 
-        if (loginType === 'user' && ['Admin', 'SuperAdmin'].includes(exist.role)) {
+        if (loginType === 'user' && exist.role === 'Admin') {
             throw new BadRequestError('Bad Credintial', 'LoginUser method');
         }
     }
