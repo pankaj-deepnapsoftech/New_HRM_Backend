@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
 
 class Config {
@@ -15,6 +15,9 @@ class Config {
     LOCAL_BACKEND_URL;
     LOCAL_FILE_URL;
     FILE_URL;
+    RAZORPAY_KEY_ID;
+    RAZORPAY_KEY_SECRET;
+    RAZORPAY_PLAN_ID_PREMIUM;
     constructor() {
         this.NODE_ENV = process.env.NODE_ENV;
         this.LOCAL_CLIENT_URL = process.env.LOCAL_CLIENT_URL;
@@ -28,7 +31,10 @@ class Config {
         this.LOCAL_BACKEND_URL = process.env.LOCAL_BACKEND_URL;
         this.LOCAL_FILE_URL = process.env.LOCAL_FILE_URL;
         this.FILE_URL = process.env.FILE_URL;
+        this.RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+        this.RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+        this.RAZORPAY_PLAN_ID_PREMIUM = process.env.RAZORPAY_PLAN_ID_PREMIUM;
     }
-};
+}
 
 export const config = new Config();
