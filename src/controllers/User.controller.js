@@ -101,45 +101,72 @@ export const LoginUser = AsyncHandler(async (req, res) => {
     let exist;
     let isEmployee = false;
 
-    // Always prefer EmpData (employee) if identifier exists there, regardless of loginType
     const EmpData = (await import('../models/EmpDataModel.js')).default;
-    const empDoc = await EmpData.findOne({
-        $or: [{ email: username }, { username }],
-    });
-    if (empDoc) {
-        isEmployee = true;
-        exist = empDoc;
-        const isCurrect = bcrypt.compareSync(password, exist.password);
-        if (!isCurrect) {
-            throw new BadRequestError('Bad Credintial', 'LoginUser method');
-        }
-    } else {
-        // Fallback to Users for admin/user
+
+    // For admin/user login, check UserModel first
+    // For employee login (or when loginType is not specified), check EmpData first
+    if (loginType === 'admin' || loginType === 'user') {
+        // Check UserModel first for admin/user login
         exist = await UserModel.findOne({
             $or: [{ email: username }, { username }],
         });
-        if (!exist) {
+        
+        if (exist) {
+            // Verify password
+            const isCurrect = bcrypt.compareSync(password, exist.password);
+            if (!isCurrect) {
+                throw new BadRequestError('Bad Credintial', 'LoginUser method');
+            }
+
+            // IMPORTANT: SuperAdmin users can ONLY login through SuperAdmin login endpoint
+            // Reject any user with SuperAdmin role trying to login through regular login
+            if (exist.role === 'SuperAdmin') {
+                throw new BadRequestError('SuperAdmin users must login through SuperAdmin portal only', 'LoginUser method');
+            }
+
+            // Role-based login validation for admin/user
+            if (loginType === 'admin' && exist.role !== 'Admin') {
+                throw new BadRequestError('Bad Credintial', 'LoginUser method');
+            }
+
+            if (loginType === 'user' && exist.role === 'Admin') {
+                throw new BadRequestError('Bad Credintial', 'LoginUser method');
+            }
+        } else {
+            // User not found in UserModel
             throw new BadRequestError('Bad Credintial', 'LoginUser method');
         }
+    } else {
+        // For employee login or when loginType is not specified, check EmpData first
+        const empDoc = await EmpData.findOne({
+            $or: [{ email: username }, { username }],
+        });
+        
+        if (empDoc) {
+            isEmployee = true;
+            exist = empDoc;
+            const isCurrect = bcrypt.compareSync(password, exist.password);
+            if (!isCurrect) {
+                throw new BadRequestError('Bad Credintial', 'LoginUser method');
+            }
+        } else {
+            // Fallback to UserModel if not found in EmpData
+            exist = await UserModel.findOne({
+                $or: [{ email: username }, { username }],
+            });
+            if (!exist) {
+                throw new BadRequestError('Bad Credintial', 'LoginUser method');
+            }
 
-        const isCurrect = bcrypt.compareSync(password, exist.password);
-        if (!isCurrect) {
-            throw new BadRequestError('Bad Credintial', 'LoginUser method');
-        }
+            const isCurrect = bcrypt.compareSync(password, exist.password);
+            if (!isCurrect) {
+                throw new BadRequestError('Bad Credintial', 'LoginUser method');
+            }
 
-        // IMPORTANT: SuperAdmin users can ONLY login through SuperAdmin login endpoint
-        // Reject any user with SuperAdmin role trying to login through regular login
-        if (exist.role === 'SuperAdmin') {
-            throw new BadRequestError('SuperAdmin users must login through SuperAdmin portal only', 'LoginUser method');
-        }
-
-        // Role-based login validation for admin/user
-        if (loginType === 'admin' && exist.role !== 'Admin') {
-            throw new BadRequestError('Bad Credintial', 'LoginUser method');
-        }
-
-        if (loginType === 'user' && exist.role === 'Admin') {
-            throw new BadRequestError('Bad Credintial', 'LoginUser method');
+            // IMPORTANT: SuperAdmin users can ONLY login through SuperAdmin login endpoint
+            if (exist.role === 'SuperAdmin') {
+                throw new BadRequestError('SuperAdmin users must login through SuperAdmin portal only', 'LoginUser method');
+            }
         }
     }
 
